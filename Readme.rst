@@ -37,6 +37,21 @@ Compile:
 
   $ make all
 
+This generates the subdirectories Debug Release and when an mpi library is
+available also DebugMPI and ReleaseMPI. Each directory contians a libforutils.a
+archive, which can be used directly for (static) linking on the compiler command
+line by giving the absolute filename
+
+  forutils/<RTYPE>/libforutils.a
+
+or by the specifying it as a library:
+
+  -Lforutils/<RTYPE> -lforutils
+
+Specify on of Debug, DebugMPI, Release, ReleaseMPI for <RTYPE>. The Debug
+release types contain debug symbols and use no optimization, while the Release
+types use a reasonable level of optimization.
+
 
 Dependencies
 =============
