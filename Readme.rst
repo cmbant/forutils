@@ -15,8 +15,7 @@ Fortran 2003/2008 programs. The utilities comprise these areas:
 
 * ArrayUtils - Find (minimal/maximal) index of an element in an array.
 * FileUtils - Class for handling file access.
-* IniObjects - Read/Write key/value style configuration files with array and
-default value support.
+* IniObjects - Read/Write key/value style configuration files with array and default value support.
 * MatrixUtils - Read/Write matrices and interface to some BLAS/LAPACK routines.
 * MiscUtils - Utility functions for optional arguments.
 * MpiUtils - Wrappers for mpi-routines to compile without mpi library.
@@ -55,8 +54,5 @@ types use a reasonable level of optimization.
 
 Dependencies
 =============
-* Fortran 2008 compatible compiler - E.g., ifort 14+, gfortran 5.2+ (current
-trunk will do).
-* MPI library - Only when you want the MpiUtils fully functional. Without an
-MPI library MpiUtils compile, but the functions are merely no-ops and the
-makefile target DebugMPI and ReleaseMPI can not be build.
+* Fortran 2008 compatible compiler - E.g., ifort 14+, gfortran 5.2+ (current trunk will do).
+* MPI library - Only when you want the MpiUtils fully functional. Without an MPI library MpiUtils compile, but the functions are merely no-ops and the makefile target DebugMPI and ReleaseMPI can not be build.
