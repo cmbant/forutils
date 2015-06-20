@@ -15,11 +15,11 @@ ifeq "$(ifortErr)" "0"
 
 #Intel compiler
 F90C     ?= ifort
-F90COMMONFLAGS ?= -fpp -W0 -WB -gen_dep=$$*.d
+F90COMMONFLAGS ?= -fpp -W0 -WB -gen-dep=$$*.d
 F90DEBUGFLAGS ?= -g
 F90RELEASEFLAGS ?= -fast
 # Intel has a special archiver for libraries.
-AR ?= xiar
+AREXE ?= xiar
 
 else
 
@@ -31,7 +31,7 @@ F90RELEASEFLAGS ?= -O3 -ffast-math
 endif
 
 # When no library archiver is set yet, use ar.
-AR ?= ar
+AREXE ?= ar
 
 SRCS = MiscUtils.f90 StringUtils.f90 ArrayUtils.f90 MpiUtils.f90 FileUtils.f90 \
 	   IniObjects.f90 RandUtils.f90 ObjectLists.f90 MatrixUtils.f90 RangeUtils.f90
@@ -53,7 +53,7 @@ DebugMPI:
 	$(F90C) $(F90COMMONFLAGS) $(F90FLAGS) -o $*.o -c $<
 
 libforutils.a: $(OBJS)
-	$(AR) -r libforutils.a $(OBJS)
+	$(AREXE) -r libforutils.a $(OBJS)
 
 clean:
 	-rm -fr Debug* Release*
