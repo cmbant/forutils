@@ -28,22 +28,22 @@ Fortran 2003/2008 programs. The utilities comprise these areas:
 Getting Started
 ================
 
-Clone this git repository:
+Clone this git repository::
 
     $ git clone https://github.com/cmbant/forutils
 
-Compile:
+Compile::
 
     $ make all
 
 This generates the subdirectories Debug Release and when an mpi library is
 available also DebugMPI and ReleaseMPI. Each directory contians a libforutils.a
 archive, which can be used directly for (static) linking on the compiler command
-line by giving the absolute filename
+line by giving the absolute filename::
 
     forutils/<RTYPE>/libforutils.a
 
-or by the specifying it as a library:
+or by the specifying it as a library::
 
     -Lforutils/<RTYPE> -lforutils
 
