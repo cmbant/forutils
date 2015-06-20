@@ -18,7 +18,7 @@ Fortran 2003/2008 programs. The utilities comprise these areas:
 * IniObjects - Read/Write key/value style configuration files with array and default value support.
 * MatrixUtils - Read/Write matrices and interface to some BLAS/LAPACK routines.
 * MiscUtils - Utility functions for optional arguments.
-* MpiUtils - Wrappers for mpi-routines to compile without mpi library.
+* MpiUtils - Wrappers for MPI-routines to compile with(out) MPI library.
 * ObjectLists - Lists of arbitrary objects including specializations for vectors.
 * RandUtils - Some functions to generate random numbers.
 * RangeUtils - Maintain sets of intervals.
@@ -36,23 +36,23 @@ Compile::
 
     $ make all
 
-This generates the subdirectories Debug Release and when an mpi library is
-available also DebugMPI and ReleaseMPI. Each directory contians a libforutils.a
-archive, which can be used directly for (static) linking on the compiler command
+This generates the subdirectories Debug and Release and when an MPI library is
+available also DebugMPI and ReleaseMPI. Each directory contains a libforutils.a
+archive, which can be used directly for static linking on the compiler command
 line by giving the absolute filename::
 
     forutils/<RTYPE>/libforutils.a
 
-or by the specifying it as a library::
+or by specifying it as a library::
 
     -Lforutils/<RTYPE> -lforutils
 
-Specify on of Debug, DebugMPI, Release, ReleaseMPI for <RTYPE>. The Debug
+Specify one of Debug, DebugMPI, Release, or ReleaseMPI for <RTYPE>. The Debug
 release types contain debug symbols and use no optimization, while the Release
 types use a reasonable level of optimization.
 
 
 Dependencies
 =============
-* Fortran 2008 compatible compiler - E.g., ifort 14+, gfortran 5.2+ (current trunk will do).
+* Fortran 2008 compatible compiler - E.g., ifort 14+, gfortran 5.2+ (current 6-trunk will do).
 * MPI library - Only when you want the MpiUtils fully functional. Without an MPI library MpiUtils compile, but the functions are merely no-ops and the makefile target DebugMPI and ReleaseMPI can not be build.
