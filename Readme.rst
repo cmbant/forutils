@@ -5,6 +5,7 @@ ForUtils
 :Version: 0.1
 :Author: Antony Lewis
 :Homepage: https://github.com/cmbant/forutils
+:Code documentation: http://cosmologist.info/forutils/
 
 
 Description
@@ -14,16 +15,17 @@ ForUtils is a package of Fortran classes and convenience functions for
 Fortran 2003/2008 programs. The utilities comprise these areas:
 
 * ArrayUtils - Find (minimal/maximal) index of an element in an array.
-* FileUtils - Class for handling file access.
-* IniObjects - Read/Write key/value style configuration files with array and default value support.
+* FileUtils - Classes for handling file access, python-like loadtxt/savetxt functions
+* IniObjects - Read/Write name=value configuration files with inheritance, array and default value support.
 * MatrixUtils - Read/Write matrices and interface to some BLAS/LAPACK routines.
 * MiscUtils - Utility functions for optional arguments.
 * MpiUtils - Wrappers for MPI-routines to compile with(out) MPI library.
 * ObjectLists - Lists of arbitrary objects including specializations for vectors.
 * RandUtils - Some functions to generate random numbers.
-* RangeUtils - Maintain sets of intervals.
+* RangeUtils - Maintain sets of equally spaced intervals, e.g. for integration ranges.
 * StringUtils - Utilities for strings, like concat of distinct types a.s.o.
 
+For a class summary see the `class trees <http://cosmologist.info/forutils/classes/_index.html>`_.
 
 Getting Started
 ================
