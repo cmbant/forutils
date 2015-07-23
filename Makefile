@@ -12,14 +12,17 @@ MPIF90C ?= mpif90
 # For standalone compiling set the compiler
 ifortErr = $(shell which ifort >/dev/null 2>&1; echo $$?)
 ifeq "$(ifortErr)" "0"
-
+ifortVer_major = $(shell ifort -v 2>&1 | cut -d " " -f 3 | cut -d. -f 1)
 #Intel compiler
 F90C     ?= ifort
-F90COMMONFLAGS ?= -fpp -W0 -WB -gen-dep=$$*.d
-F90DEBUGFLAGS ?= -g
+F90COMMONFLAGS ?= -fpp -W0 -WB
+F90DEBUGFLAGS ?= -g -traceback
 F90RELEASEFLAGS ?= -fast
 # Intel has a special archiver for libraries.
 AREXE ?= xiar
+ifeq "$(ifortVer_major)" "15"
+F90COMMONFLAGS += -gen-dep=$$*.d
+endif
 
 else
 
