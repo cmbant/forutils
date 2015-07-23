@@ -21,7 +21,10 @@ F90RELEASEFLAGS ?= -fast
 # Intel has a special archiver for libraries.
 AREXE ?= xiar
 ifeq "$(ifortVer_major)" "15"
-F90COMMONFLAGS += -gen-dep=$$*.d
+# Check whether SRC_DIR is set to prevent adding gen-dep multiple times.
+ifdef SRC_DIR
+F90COMMONFLAGS += -gen-dep=$*.d
+endif
 endif
 
 else
