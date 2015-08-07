@@ -15,7 +15,7 @@ ifeq "$(ifortErr)" "0"
 ifortVer_major = $(shell ifort -v 2>&1 | cut -d " " -f 3 | cut -d. -f 1)
 #Intel compiler
 F90C     ?= ifort
-F90COMMONFLAGS ?= -fpp -W0 -WB
+F90COMMONFLAGS ?= -fpp -W0 -WB -openmp
 F90DEBUGFLAGS ?= -g -traceback
 F90RELEASEFLAGS ?= -fast
 # Intel has a special archiver for libraries.
@@ -30,7 +30,7 @@ endif
 else
 
 F90C ?= gfortran
-F90COMMONFLAGS ?= -cpp -ffree-line-length-none -fmax-errors=4 -MMD
+F90COMMONFLAGS ?= -cpp -ffree-line-length-none -fmax-errors=4 -MMD -fopenmp
 F90DEBUGFLAGS ?= -g -O0
 F90RELEASEFLAGS ?= -O3 -ffast-math
 
