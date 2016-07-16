@@ -80,6 +80,7 @@
     if (tau >= this%Highest) then
         pointstep = this%npoints
     else
+        print *, "tau=", tau, ",this%Highest=", this%Highest
         stop 'TRanges_IndexOf: value out of range'
     end if
     end function TRanges_IndexOf
@@ -272,9 +273,9 @@
 
     max_delta = this%Highest - this%Lowest
 
-    if (.not. allocated(this%R) .or. size(this%R) < ix + 1) then
+    if (.not. allocated(this%R) .or. size(this%R) < ix) then
         if (allocated (this%R)) deallocate (this%R)
-        allocate (this%R(ix + 1))
+        allocate (this%R(ix))
     end if
 
     allocate(RequestDelta(ix))
