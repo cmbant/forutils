@@ -45,7 +45,9 @@ endif
 AREXE ?= ar
 
 SRCS = MiscUtils.f90 StringUtils.f90 ArrayUtils.f90 MpiUtils.f90 FileUtils.f90 \
-	   IniObjects.f90 RandUtils.f90 ObjectLists.f90 MatrixUtils.f90 RangeUtils.f90
+	   IniObjects.f90 RandUtils.f90 ObjectLists.f90 MatrixUtils.f90 RangeUtils.f90 \
+	   Interpolation.f90
+
 OBJS = $(patsubst %.f90,%.o,$(SRCS))
 
 Release:
