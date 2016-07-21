@@ -1439,7 +1439,7 @@
 
     subroutine LoadTxt_2D(aname, mat, m, n, comment)
     character(LEN=*), intent(IN) :: aname
-    real(kind(1.d0)), allocatable :: mat(:,:)
+    real(kind(1.d0)), allocatable, intent(out) :: mat(:,:)
     integer mm, nn, j
     Type(TTextFile) :: F
     character(LEN=:), allocatable :: InLine
@@ -1465,7 +1465,7 @@
 
     subroutine LoadTxt_1D(aname, vec, n, comment)
     character(LEN=*), intent(IN) :: aname
-    real(kind(1.d0)), allocatable :: vec(:)
+    real(kind(1.d0)), allocatable, intent(out) :: vec(:)
     integer nn, j
     Type(TTextFile) :: F
     character(LEN=:), allocatable :: InLine
