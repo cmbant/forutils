@@ -769,18 +769,20 @@
 
     end subroutine TInterpGrid2D_Init
 
-    subroutine TInterpGrid2D_InitFromMatrixTextFile(this, Filename, colvals, rowvals)
+    subroutine TInterpGrid2D_InitFromMatrixTextFile(this, Filename, colvals, rowvals, dolog)
     class(TInterpGrid2D):: this
     character(LEN=*), intent(in) :: Filename
     real(sp_acc), intent(in) :: colvals(:), rowvals(:)
+    logical, intent(in), optional :: dolog
 
     call this%Clear()
-    this%ny = size(colvals)
-    this%nx = size(rowvals)
+    this%nx = size(colvals)
+    this%ny = size(rowvals)
     allocate(this%z(this%nx, this%ny))
     call File%ReadTextMatrix(Filename, this%z)
-    allocate(this%x, source = rowvals)
-    allocate(this%y, source = colvals)
+    if (DefaultFalse(dolog)) this%z = log(this%z)
+    allocate(this%x, source = colvals)
+    allocate(this%y, source = rowvals)
     call this%InitInterp()
 
     end subroutine TInterpGrid2D_InitFromMatrixTextFile
@@ -792,14 +794,14 @@
     Type(TBinaryFile) :: F
 
     call this%Clear()
-    this%ny = size(colvals)
-    this%nx = size(rowvals)
+    this%nx = size(colvals)
+    this%ny = size(rowvals)
     allocate(this%z(this%nx, this%ny))
     call F%OpenFile(Filename, mode='binary')
     call F%Read(this%z)
     call F%Close()
-    allocate(this%x, source = rowvals)
-    allocate(this%y, source = colvals)
+    allocate(this%x, source = colvals)
+    allocate(this%y, source = rowvals)
     call this%InitInterp()
 
     end subroutine TInterpGrid2D_InitFromMatrixBinaryFile

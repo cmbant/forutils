@@ -1424,7 +1424,8 @@
         do j=1,m
             do k=1,n
                 status = 1
-                if (.not. F%ReadLineSkipEmptyAndComments(InLine)) exit
+                if (.not. F%ReadLineSkipEmptyAndComments(InLine)) &
+                    call F%Error( 'matrix file is the wrong size')
                 read (InLine,*, iostat=status) mat(j,k)
                 if (status/=0) call F%Error( 'matrix file is the wrong size')
             end do
