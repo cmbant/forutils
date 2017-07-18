@@ -10,7 +10,12 @@ MPIF90C ?= mpif90
 # F90RELEASEFLAGS: These flags are only used for creating Release artefacts
 
 # For standalone compiling set the compiler
+ifneq ($(COMPILER),gfortran)
 ifortErr = $(shell which ifort >/dev/null 2>&1; echo $$?)
+else
+ifortErr = 1
+endif
+
 ifeq "$(ifortErr)" "0"
 
 ifortVer_major = $(shell ifort -v 2>&1 | cut -d " " -f 3 | cut -d. -f 1)
