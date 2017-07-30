@@ -58,11 +58,17 @@ OBJS = $(patsubst %.f90,%.o,$(SRCS))
 Release:
 	$(MAKE) OUTPUT_DIR=Release F90FLAGS="$(F90RELEASEFLAGS)" directories
 
+Releaselib:
+	$(MAKE) OUTPUT_DIR=Releaselib directories
+
 ReleaseMPI:
 	$(MAKE) OUTPUT_DIR=ReleaseMPI F90C=$(MPIF90C) F90FLAGS="$(F90RELEASEFLAGS) -DMPI" directories
 
 Debug:
 	$(MAKE) OUTPUT_DIR=Debug F90FLAGS="$(F90DEBUGFLAGS)" directories
+
+Debuglib:
+	$(MAKE) OUTPUT_DIR=Debuglib directories
 
 DebugMPI:
 	$(MAKE) OUTPUT_DIR=DebugMPI F90C=$(MPIF90C) F90FLAGS="$(F90DEBUGFLAGS) -DMPI" directories
