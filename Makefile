@@ -96,3 +96,7 @@ directories:
 -include $(SRCS:.f90=.d)
 
 .PHONY: directories clean Release Debug ReleaseMPI DebugMPI libforutils.a
+
+#Avoid problems with intel gen-dep
+mpif.h:
+    echo ''
