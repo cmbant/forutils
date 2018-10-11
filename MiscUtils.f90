@@ -189,17 +189,4 @@
 
     end function isFloat2
 
-    function IndexOf(aval,arr, n)
-        integer, intent(in) :: n, arr(n), aval
-        integer :: IndexOf, i
-
-        do i=1,n
-            if (arr(i)==aval) then
-                IndexOf= i
-                return
-            end if
-        end do
-        IndexOf = 0
-
-    end function IndexOf
-end module MiscUtils
+    end module MiscUtils
