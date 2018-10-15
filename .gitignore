@@ -1,28 +1,14 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+*.u2d
+*.u2d
+.DS_Store
+*.suo
+*.user
+.vs/
+x64/
+Debug/
+Release/
+Debuglib/
+Releaselib/
+DebugMPI/
+ReleaseMPI/
 
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app

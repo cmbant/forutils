@@ -57,4 +57,4 @@ types use a reasonable level of optimization.
 Dependencies
 =============
 * Fortran 2008 compatible compiler - E.g., ifort 14+, gfortran 6 or higher.
-* MPI library - Only when you want the MpiUtils fully functional. Without an MPI library MpiUtils compile, but the functions are merely no-ops and the makefile target DebugMPI and ReleaseMPI can not be build.
+* MPI library - Only when you want the MpiUtils fully functional. Without an MPI library MpiUtils compile, but the functions are merely no-ops and the makefile target DebugMPI and ReleaseMPI can not be built.
