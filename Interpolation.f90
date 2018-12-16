@@ -73,6 +73,7 @@
     procedure :: FindValue => TCubicSpline_FindValue
     procedure :: LoadState => TCubicSpline_LoadState
     procedure :: SaveState => TCubicSpline_SaveState
+    procedure :: IntegralArray => TCubicSpline_IntegralArray
     generic :: Init => TCubicSpline_Init, TCubicSpline_InitInt
     FINAL :: TCubicSpline_Free !not needed in standard, just for compiler bugs
     end Type
@@ -303,6 +304,27 @@
     TSpline1D_Derivative = dely/ho+ ((1-3*a0**2)*this%ddF(llo) + (3*b0**2-1)*this%ddF(lhi))*ho/6
 
     end function TSpline1D_Derivative
+
+    subroutine TCubicSpline_IntegralArray(this, yint, first_index, last_index)
+    !Array of values of integral at the original sampled points
+    class(TCubicSpline) :: this
+    real(sp_acc), intent(out) :: yint(*)
+    integer, intent(in), optional :: first_index, last_index
+    integer first, last
+    real(sp_acc) dx
+    integer i, ix
+
+    First  = PresentDefault(1, first_index)
+    Last = PresentDefault(this%n, last_index)
+    yint(1) = 0
+    ix = 2
+    do i=first+1, last
+        dx = (this%x(i) - this%x(i-1))
+        yint(ix) = yint(ix-1) + dx*( (this%F(i)+this%F(i-1))/2 - dx**2/24*(this%ddF(i)+this%ddF(i-1)))
+        ix = ix+1
+    end do
+
+    end subroutine TCubicSpline_IntegralArray
 
     subroutine TSpline1D_ArrayValue(this, x, y, error )
     !Get array of values y(x), assuming x is monotonically increasing
@@ -2145,90 +2167,90 @@
             ! direction but outside in the y direction.
         ELSE IF ((ixdi > 0.AND.ixdi < nxd) .AND.  &
             (iydi <= 0.OR.iydi >= nyd)) THEN
-        ! Retrieves the z and partial derivative values at the other
-        ! vertex of the semi-infinite rectangle.
-        IF (ixdi /= ixdipv .OR. iydi /= iydipv) THEN
-            ixd1 = ixd0 + 1
-            dx = xd(ixd1) - x0
-            dxsq = dx*dx
-            z10 = zd(ixd1,iyd0)
-            zx10 = pdd(1,ixd1,iyd0)
-            zy10 = pdd(2,ixd1,iyd0)
-            zxy10 = pdd(3,ixd1,iyd0)
-            ! Calculates the polynomial coefficients.
-            z0dx = (z10-z00)/dx
-            zy0dx = (zy10-zy00)/dx
-            p00 = z00
-            p01 = zy00
-            p10 = zx00
-            p11 = zxy00
-            p20 = (2.0* (z0dx-zx00)+z0dx-zx10)/dx
-            p21 = (2.0* (zy0dx-zxy00)+zy0dx-zxy10)/dx
-            p30 = (-2.0*z0dx+zx10+zx00)/dxsq
-            p31 = (-2.0*zy0dx+zxy10+zxy00)/dxsq
-        END IF
-        ! Evaluates the polynomial.
-        u = xii - x0
-        v = yii - y0
-        q0 = p00 + v*p01
-        q1 = p10 + v*p11
-        q2 = p20 + v*p21
-        q3 = p30 + v*p31
-        zii = q0 + u* (q1+u* (q2+u*q3))
-        ! End of Case 2
+            ! Retrieves the z and partial derivative values at the other
+            ! vertex of the semi-infinite rectangle.
+            IF (ixdi /= ixdipv .OR. iydi /= iydipv) THEN
+                ixd1 = ixd0 + 1
+                dx = xd(ixd1) - x0
+                dxsq = dx*dx
+                z10 = zd(ixd1,iyd0)
+                zx10 = pdd(1,ixd1,iyd0)
+                zy10 = pdd(2,ixd1,iyd0)
+                zxy10 = pdd(3,ixd1,iyd0)
+                ! Calculates the polynomial coefficients.
+                z0dx = (z10-z00)/dx
+                zy0dx = (zy10-zy00)/dx
+                p00 = z00
+                p01 = zy00
+                p10 = zx00
+                p11 = zxy00
+                p20 = (2.0* (z0dx-zx00)+z0dx-zx10)/dx
+                p21 = (2.0* (zy0dx-zxy00)+zy0dx-zxy10)/dx
+                p30 = (-2.0*z0dx+zx10+zx00)/dxsq
+                p31 = (-2.0*zy0dx+zxy10+zxy00)/dxsq
+            END IF
+            ! Evaluates the polynomial.
+            u = xii - x0
+            v = yii - y0
+            q0 = p00 + v*p01
+            q1 = p10 + v*p11
+            q2 = p20 + v*p21
+            q3 = p30 + v*p31
+            zii = q0 + u* (q1+u* (q2+u*q3))
+            ! End of Case 2
 
-        ! Case 3.  When the rectangle is outside the data area in the x
-        ! direction but inside in the y direction.
+            ! Case 3.  When the rectangle is outside the data area in the x
+            ! direction but inside in the y direction.
         ELSE IF ((ixdi <= 0.OR.ixdi >= nxd) .AND.  &
             (iydi > 0 .AND. iydi < nyd)) THEN
-        ! Retrieves the z and partial derivative values at the other
-        ! vertex of the semi-infinite rectangle.
-        IF (ixdi /= ixdipv .OR. iydi /= iydipv) THEN
-            iyd1 = iyd0 + 1
-            dy = yd(iyd1) - y0
-            dysq = dy*dy
-            z01 = zd(ixd0,iyd1)
-            zx01 = pdd(1,ixd0,iyd1)
-            zy01 = pdd(2,ixd0,iyd1)
-            zxy01 = pdd(3,ixd0,iyd1)
-            ! Calculates the polynomial coefficients.
-            z0dy = (z01-z00)/dy
-            zx0dy = (zx01-zx00)/dy
-            p00 = z00
-            p01 = zy00
-            p02 = (2.0*(z0dy-zy00)+z0dy-zy01)/dy
-            p03 = (-2.0*z0dy+zy01+zy00)/dysq
-            p10 = zx00
-            p11 = zxy00
-            p12 = (2.0*(zx0dy-zxy00) + zx0dy - zxy01)/dy
-            p13 = (-2.0*zx0dy + zxy01 + zxy00)/dysq
-        END IF
+            ! Retrieves the z and partial derivative values at the other
+            ! vertex of the semi-infinite rectangle.
+            IF (ixdi /= ixdipv .OR. iydi /= iydipv) THEN
+                iyd1 = iyd0 + 1
+                dy = yd(iyd1) - y0
+                dysq = dy*dy
+                z01 = zd(ixd0,iyd1)
+                zx01 = pdd(1,ixd0,iyd1)
+                zy01 = pdd(2,ixd0,iyd1)
+                zxy01 = pdd(3,ixd0,iyd1)
+                ! Calculates the polynomial coefficients.
+                z0dy = (z01-z00)/dy
+                zx0dy = (zx01-zx00)/dy
+                p00 = z00
+                p01 = zy00
+                p02 = (2.0*(z0dy-zy00)+z0dy-zy01)/dy
+                p03 = (-2.0*z0dy+zy01+zy00)/dysq
+                p10 = zx00
+                p11 = zxy00
+                p12 = (2.0*(zx0dy-zxy00) + zx0dy - zxy01)/dy
+                p13 = (-2.0*zx0dy + zxy01 + zxy00)/dysq
+            END IF
 
-        ! Evaluates the polynomial.
-        u = xii - x0
-        v = yii - y0
-        q0 = p00 + v* (p01 + v*(p02+v*p03))
-        q1 = p10 + v* (p11 + v*(p12+v*p13))
-        zii = q0 + u*q1
-        ! End of Case 3
+            ! Evaluates the polynomial.
+            u = xii - x0
+            v = yii - y0
+            q0 = p00 + v* (p01 + v*(p02+v*p03))
+            q1 = p10 + v* (p11 + v*(p12+v*p13))
+            zii = q0 + u*q1
+            ! End of Case 3
 
-        ! Case 4.  When the rectangle is outside the data area in both the
-        ! x and y direction.
+            ! Case 4.  When the rectangle is outside the data area in both the
+            ! x and y direction.
         ELSE IF ((ixdi <= 0 .OR. ixdi >= nxd) .AND.  &
             (iydi <= 0 .OR. iydi >= nyd)) THEN
-        ! Calculates the polynomial coefficients.
-        IF (ixdi /= ixdipv .OR. iydi /= iydipv) THEN
-            p00 = z00
-            p01 = zy00
-            p10 = zx00
-            p11 = zxy00
-        END IF
-        ! Evaluates the polynomial.
-        u = xii - x0
-        v = yii - y0
-        q0 = p00 + v*p01
-        q1 = p10 + v*p11
-        zii = q0 + u*q1
+            ! Calculates the polynomial coefficients.
+            IF (ixdi /= ixdipv .OR. iydi /= iydipv) THEN
+                p00 = z00
+                p01 = zy00
+                p10 = zx00
+                p11 = zxy00
+            END IF
+            ! Evaluates the polynomial.
+            u = xii - x0
+            v = yii - y0
+            q0 = p00 + v*p01
+            q1 = p10 + v*p11
+            zii = q0 + u*q1
         END IF
         ! End of Case 4
         zi(iip) = zii
