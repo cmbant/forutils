@@ -124,17 +124,22 @@
     function TimerTime()
     real(TTimer_dp) time
     real(TTimer_dp) :: TimerTime
+    !$ real(TTimer_dp), external :: omp_get_wtime
 #ifdef MPI
     TimerTime = MPI_WTime()
 #else
-    call cpu_time(time)
+    time = 0
+    !$ time = OMP_GET_WTIME()
+    if (time==0) call cpu_time(time)
     TimerTime=  time
 #endif
     end function TimerTime
 
-    subroutine TTimer_Start(this)
+    subroutine TTimer_Start(this, time)
     class(TTimer) :: this
+    real(TTimer_dp), intent(out), optional :: time
     this%start_time = TimerTime()
+    if (present(time)) time = this%start_time
     end subroutine TTimer_Start
 
     real(TTimer_dp) function TTimer_Time(this)
