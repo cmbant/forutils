@@ -440,6 +440,7 @@
                 write(fid) size(P),k
                 write(fid) Point
                 class default
+                !see e.g. https://cosmocoffee.info/viewtopic.php?f=11&t=2827                    
                 call this%Error('TObjectList: Unknown type to save (if gfortran, check 7.3.1 or higher)')
             end select
         Type is (character(LEN=*))
