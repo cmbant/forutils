@@ -1,0 +1,35 @@
+language: sh
+
+git:
+  depth: false
+
+sudo: required
+
+matrix:
+  include:
+    - env:
+        - GCC_VERSION="6"
+        - HUB="cmbant/docker-gcc-build:gcc6"
+        - COMMAND="/bin/bash -c /forutils/tests/run_tests.sh"
+    - env:
+        - GCC_VERSION="8"
+        - HUB="cmbant/docker-gcc-build:gcc8"
+        - COMMAND="/bin/bash -c /forutils/tests/run_tests.sh"
+    - env:
+        - GCC_VERSION="trunk"
+        - HUB="zbeekman/nightly-gcc-trunk-docker-image"
+        - COMMAND="-c /forutils/tests/run_tests.sh"
+ 
+services:
+  - docker
+
+before_install:
+  - docker pull $HUB
+
+install:
+  - chmod +x tests/run_tests.sh
+     
+script:
+  - docker run -v $(pwd):/forutils -t $HUB $COMMAND
+
+

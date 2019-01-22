@@ -41,7 +41,7 @@ else
 
 F90C ?= gfortran
 F90COMMONFLAGS ?= -cpp -ffree-line-length-none -fmax-errors=4 -MMD -fopenmp -fPIC
-F90DEBUGFLAGS ?= -g -O0
+F90DEBUGFLAGS ?= -g -O0 -fbacktrace
 F90RELEASEFLAGS ?= -O3 -ffast-math
 
 endif
