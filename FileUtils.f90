@@ -265,9 +265,17 @@
 
     end subroutine
 
-    subroutine TFileStream_Close(this)
+    subroutine TFileStream_Close(this, del)
     class(TFileStream) :: this
-    if (this%unit/=0) close(this%unit)
+    logical, optional :: del
+
+    if (this%unit/=0) then
+        if (DefaultFalse(del)) then
+            close(this%unit, status='DELETE')
+        else
+            close(this%unit)
+        end if
+    end if
     this%unit=0
     end subroutine TFileStream_Close
 

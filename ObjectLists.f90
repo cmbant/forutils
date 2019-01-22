@@ -414,7 +414,7 @@
     subroutine SaveBinary(this,fid)
     Class(TObjectList) :: this
     integer, intent(in) :: fid
-    integer i,k
+    integer i,k, sz
     class(*), pointer :: P(:)
 
     write (fid) this%Count
@@ -440,12 +440,13 @@
                 write(fid) size(P),k
                 write(fid) Point
                 class default
-                !see e.g. https://cosmocoffee.info/viewtopic.php?f=11&t=2827                    
+                !see e.g. https://cosmocoffee.info/viewtopic.php?f=11&t=2827
                 call this%Error('TObjectList: Unknown type to save (if gfortran, check 7.3.1 or higher)')
             end select
         Type is (character(LEN=*))
             k=5
-            write(fid) len(Item), k
+            sz = len(item) !len may return kind=8 in latest gfortran
+            write(fid) sz, k
             write(fid) Item
             class default
             call this%Error('TObjectList: not implemented non-array save')
