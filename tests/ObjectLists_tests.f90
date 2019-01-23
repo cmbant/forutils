@@ -51,7 +51,7 @@
 
     subroutine checkL()
     select type(P=>L%ArrayItem(1))
-    class is (double precision)
+    type is (double precision)
         if (all(P==1)) then
             print *, 'OK list double'
         else
@@ -63,7 +63,7 @@
         print *,'Error getting double real'
     end select
     select type(P=>L%ArrayItem(2))
-    class is (real)
+    type is (real)
         if (all(P==2)) then
             print *, 'OK list real'
         else
@@ -75,7 +75,7 @@
         print *,'Error getting list real'
     end select
     select type(P=>L%ArrayItem(3))
-    class is (integer)
+    type is (integer)
         if (all(P==3)) then
             print *, 'OK list int'
         else
@@ -87,8 +87,8 @@
         print *,'Error getting int real'
     end select
     select type(P=>L%ArrayItem(4))
-    class is (logical)
-        if (all(P==.true.)) then
+    type is (logical)
+        if (all(P .eqv. .true.)) then
             print *, 'OK list logical'
         else
             fails = fails+1
@@ -99,7 +99,7 @@
         print *,'Error getting list logical'
     end select
     select type(P=>L%ArrayItemIndex(2,2))
-    class is (real)
+    type is (real)
         if (P/=2.0) then
             fails = fails +1
             print *, 'Error with ArrayItemIndex'
