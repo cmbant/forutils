@@ -7,7 +7,7 @@ default: tester
 libforutils:
 	$(MAKE) -C '..' $(OUTPUT)
 
-FILES = ObjectLists_tests.o interpolation_tests.o inifile_tests.o run_tests.o
+FILES = ObjectLists_tests.o interpolation_tests.o inifile_tests.o file_tests.o run_tests.o
 
 
 F90C = gfortran
