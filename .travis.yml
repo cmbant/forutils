@@ -6,19 +6,21 @@ git:
 sudo: required
 
 env:
-  - COMMAND="/bin/bash -c /forutils/tests/run_tests.sh"
 
 matrix:
   include:
     - env:
         - GCC_VERSION="6"
         - HUB="cmbant/docker-gcc-build:gcc6"
+        - COMMAND="/bin/bash -c /forutils/tests/run_tests.sh"
     - env:
         - GCC_VERSION="7"
         - HUB="cmbant/docker-gcc-build:gcc7"
+        - COMMAND="/bin/bash -c /forutils/tests/run_tests.sh"
     - env:
         - GCC_VERSION="8"
         - HUB="cmbant/docker-gcc-build:gcc8"
+        - COMMAND="/bin/bash -c /forutils/tests/run_tests.sh"
     - env:
         - GCC_VERSION="trunk"
         - HUB="zbeekman/nightly-gcc-trunk-docker-image"
