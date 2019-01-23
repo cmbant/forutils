@@ -39,6 +39,7 @@
     call L%Add(arr3)
     arr4 = .true.
     call L%Add(arr4)
+    call L%Add(arr)
 
     call F%CreateFile('tester.bin')
     call L%SaveBinary(F%unit)
@@ -50,6 +51,7 @@
     call F%CreateFile('tester.bin')
     call L%SaveBinary(F%unit)
     call F%Close(del = .true.)
+    print *, 'read/write list OK'
 
     end  subroutine test_TObjectList
 
@@ -68,7 +70,7 @@
 
     call T%Sort()
     if (T%Item(1) == -5.d0 .and. T%item(3) ==0.5d0) then
-        print *,'OK'
+        print *,'test_TRealLIst OK'
     else
         fails= fails + 1
         print *,'error'
@@ -85,7 +87,7 @@
     call T%Add([0.5d0])
     call T%Add([-3.d0, 1.d0])
     if (all(T%Item(1) == [0.5d0]) .and. T%item(2,2) ==1.d0) then
-        print *,'OK'
+        print *,'test_TRealArrayList OK'
     else
         fails= fails+1
         print *,'error'
@@ -124,7 +126,7 @@
             fails = fails + 1
             call T%WriteItems()
         else
-            print *, 'OK'
+            print *, 'test_TStringLIst OK'
         end if
         if (i==2) exit
         call ReadWrite(T)
@@ -136,7 +138,7 @@
         print *,'value Of error'
         fails = fails + 1
     else
-        print *,'OK'
+        print *,'Value of OK'
     end if
 
     end subroutine test_TStringLIst
