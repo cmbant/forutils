@@ -5,8 +5,6 @@ git:
 
 sudo: required
 
-env:
-
 matrix:
   include:
     - env:
