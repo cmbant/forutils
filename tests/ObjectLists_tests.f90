@@ -4,11 +4,6 @@
     implicit none
     character(LEN=0), target :: Empty_String = ''
 
-    type Object_pointer
-        class(*), pointer :: p => null()
-        class(*), pointer :: Object => null()
-    end type Object_pointer
-
     contains
 
 
@@ -39,7 +34,7 @@
     call L%Add(arr3)
     arr4 = .true.
     call L%Add(arr4)
-    call L%Add(arr)
+    call checkL()
 
     call F%CreateFile('tester.bin')
     call L%SaveBinary(F%unit)
@@ -51,7 +46,69 @@
     call F%CreateFile('tester.bin')
     call L%SaveBinary(F%unit)
     call F%Close(del = .true.)
-    print *, 'read/write list OK'
+    call checkL()
+    contains
+
+    subroutine checkL()
+    select type(P=>L%ArrayItem(1))
+    class is (double precision)
+        if (all(P==1)) then
+            print *, 'OK list double'
+        else
+            fails = fails+1
+            print *, 'Error double value'
+        end if
+        class default
+        fails = fails+1
+        print *,'Error getting double real'
+    end select
+    select type(P=>L%ArrayItem(2))
+    class is (real)
+        if (all(P==2)) then
+            print *, 'OK list real'
+        else
+            fails = fails+1
+            print *, 'Error real value'
+        end if
+        class default
+        fails = fails+1
+        print *,'Error getting list real'
+    end select
+    select type(P=>L%ArrayItem(3))
+    class is (integer)
+        if (all(P==3)) then
+            print *, 'OK list int'
+        else
+            fails = fails+1
+            print *, 'Error int value'
+        end if
+        class default
+        fails = fails+1
+        print *,'Error getting int real'
+    end select
+    select type(P=>L%ArrayItem(4))
+    class is (logical)
+        if (all(P==.true.)) then
+            print *, 'OK list logical'
+        else
+            fails = fails+1
+            print *, 'Error logical value'
+        end if
+        class default
+        fails = fails+1
+        print *,'Error getting list logical'
+    end select
+    select type(P=>L%ArrayItemIndex(2,2))
+    class is (real)
+        if (P/=2.0) then
+            fails = fails +1
+            print *, 'Error with ArrayItemIndex'
+        end if
+        class default
+        fails = fails+1
+        print *, 'Error getting ArrayItemIndex'
+    end select
+    end subroutine checkL
 
     end  subroutine test_TObjectList
 
