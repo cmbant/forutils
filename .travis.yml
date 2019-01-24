@@ -29,6 +29,7 @@ matrix:
         - COMMAND="-c /forutils/tests/run_tests.sh"
   allow_failures:
         - name: "trunk"
+        - name: "GCC6"
  
 services:
   - docker
