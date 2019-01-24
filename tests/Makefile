@@ -1,24 +1,32 @@
 
-OUTPUT = Debug
-OUTPUT_DIR=../$(OUTPUT)
+all: default
 
-default: tester
+default: Release Debug
+
+include ../Makefile_compiler
+
+
+Debug: 
+	$(MAKE) tester OUTPUT=Debug F90FLAGS="$(F90DEBUGFLAGS) $(F90COMMONFLAGS)" 
+
+Release: 
+	$(MAKE) tester OUTPUT=Release F90FLAGS="$(F90RELEASEFLAGS) $(F90COMMONFLAGS)"
+
+OUTPUT_DIR=../$(OUTPUT)
 
 libforutils:
 	$(MAKE) -C '..' $(OUTPUT)
 
-FILES = ObjectLists_tests.o interpolation_tests.o inifile_tests.o file_tests.o run_tests.o
+FILES = ObjectLists_tests interpolation_tests inifile_tests file_tests run_tests
+
+OBJS = $(patsubst %,$(OUTPUT_DIR)/%.o,$(FILES))
 
 
-F90C = gfortran
-F90FLAGS = -cpp -MMD -J$(OUTPUT_DIR) -fmax-errors=4 -fopenmp -fbacktrace
+tester: libforutils $(OBJS)
+	$(F90C) $(F90FLAGS) $(OBJS) -o $@_$(OUTPUT)  -L$(OUTPUT_DIR) -lforutils
 
-
-tester: libforutils $(FILES)
-	$(F90C) $(F90FLAGS) $(FILES) -o $@  -L$(OUTPUT_DIR) -lforutils
-
-%.o: %.f90
-	$(F90C) $(F90FLAGS) -c $< -o $*.o
+$(OUTPUT_DIR)/%.o: %.f90
+	$(F90C) $(F90FLAGS) $(MODLINK)$(OUTPUT_DIR) -c $< -o $(OUTPUT_DIR)/$*.o
 
 clean:
-	-rm -f *.o *.a *.d core *.mod *.optrpt
+	$(MAKE) -C '..' clean

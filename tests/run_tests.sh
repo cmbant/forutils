@@ -1,13 +1,21 @@
 
-
 gfortran --version
 
+
 cd forutils/tests
+
+set -e
+set -o pipefail
+
 make
 
-./tester
+echo ''
+echo 'Testing Debug build..'
 
-rc=$?
+./tester_Debug
 
-exit $rc
+echo ''
+echo 'Testing Release build..'
+
+./tester_Release
 

@@ -167,7 +167,7 @@
     character(LEN=*), intent(in) :: msg
 
     write(*,*) msg
-    stop
+    error stop
 
     end subroutine Error
 
