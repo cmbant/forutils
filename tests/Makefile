@@ -17,7 +17,7 @@ OUTPUT_DIR=../$(OUTPUT)
 libforutils:
 	$(MAKE) -C '..' $(OUTPUT)
 
-FILES = ObjectLists_tests interpolation_tests inifile_tests file_tests run_tests
+FILES = ObjectLists_tests interpolation_tests inifile_tests file_tests string_tests run_tests
 
 OBJS = $(patsubst %,$(OUTPUT_DIR)/%.o,$(FILES))
 
