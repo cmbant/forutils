@@ -6,7 +6,6 @@
 
     contains
 
-
     function RunListTests() result (fails)
     integer fails
     fails = 0

@@ -94,10 +94,7 @@
 
     this%has_dpoints = DefaultTrue(want_dpoints)
 
-    ! Dealloc/Realloc only, when not enough space present.
-    if (allocated(this%points) .and. size(this%points) < this%npoints) &
-        deallocate(this%points)
-    if (.not. allocated(this%points)) allocate(this%points(this%npoints))
+    call reallocate(this%points, this%npoints)
 
     ix=0
     do i=1, this%count
@@ -128,11 +125,7 @@
 
     halfs = DefaultTrue(half_ends)
 
-    ! Dealloc/Realloc only, when not enough space present.
-    if (allocated(this%dpoints) .and. size(this%dpoints) < this%npoints) &
-        deallocate(this%dpoints)
-    if (.not. allocated(this%dpoints)) allocate(this%dpoints(this%npoints))
-
+    call reallocate(this%dpoints, this%npoints)
     do i=2, this%npoints-1
         this%dpoints(i) = (this%points(i+1) - this%points(i-1))/2
     end do
@@ -194,15 +187,7 @@
     nreg = this%count + 1
     allocate(NewRanges(nreg))
     if (allocated(this%R) .and. this%count > 0) then
-#if defined(__IBMCPP__) || defined(__xlC__) || defined(__xlc__)
-        !           avoid IBM compiler bug, from Angel de Vicente
-        !           detection of IBM compiler by preprocessors symbols taken from boost
-        do i= 1, this%count
-            NewRanges(i) = this%R(i)
-        end do
-#else
         NewRanges(1:this%count) = this%R(1:this%count)
-#endif
     end if
 
     allocate(EndPoints(0:nreg * 2))
@@ -266,7 +251,6 @@
         end if
     end do
 
-
     !ix is the number of end points
     this%Lowest = EndPoints(1)
     this%Highest = EndPoints(ix)
@@ -286,7 +270,7 @@
             AReg%Low = EndPoints(i)
             AReg%High = EndPoints(i+1)
 
-            !               max_delta = EndPoints(i+1) - EndPoints(i)
+            ! max_delta = EndPoints(i+1) - EndPoints(i)
             delta = max_delta
             AReg%IsLog = .false.
 
@@ -371,7 +355,7 @@
                     min_request = RequestDelta(i)
                     max_request = min_request
                 end if
-                if (i/= this%count) then  !from i/= ix Mar08
+                if (i/= this%count) then
                     associate (LastReg => this%R(i+1))
                         if (RequestDelta(i) >= AReg%delta .and. Diff <= LastReg%Delta_min &
                             .and. LastReg%Delta_min <= max_request) then
@@ -396,7 +380,6 @@
                         if (RequestDelta(i) >= AReg%delta .and. Diff <= LastReg%Delta_max &
                             .and. LastReg%Delta_max <= min_request) then
                             LastReg%High = AReg%High
-                            !AlMat08 LastReg%Low = AReg%Low
                             if (Diff > LastReg%Delta_max*this%RangeTol) then
                                 LastReg%steps =  LastReg%steps + 1
                             end if
@@ -438,7 +421,6 @@
 
     this%npoints = nsteps
 
-    deallocate(NewRanges, EndPoints, RequestDelta)
     end subroutine TRanges_Add
 
 

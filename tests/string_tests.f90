@@ -26,7 +26,7 @@
         print *, 'Error in Join: ', S2
     end if
     
-    print *, 'OK string tests'
+    if (fails==0) print *, 'OK string tests'
     
 
     end function
