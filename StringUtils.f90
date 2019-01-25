@@ -3,6 +3,9 @@
     use MpiUtils
     implicit none
 
+    character(26), parameter, private :: AlphUpper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    character(26), parameter, private :: AlphLower = 'abcdefghijklmnopqrstuvwxyz'
+
 
     INTERFACE RealToStr
     module procedure SingleToStr, DoubleToStr
@@ -17,6 +20,36 @@
     IsWhiteSpace = (C==' ') .or. (C==char(9))
 
     end function IsWhiteSpace
+
+    function UpperCase(str) result (string)
+    !   Changes an ascii string to upper case
+    ! https://stackoverflow.com/questions/10759375/how-can-i-write-a-to-upper-or-to-lower-function-in-f90
+    character(*), Intent(In) :: str
+    character(LEN(str))      :: string
+    Integer :: ic, i
+
+    string = str
+    do i = 1, LEN_TRIM(str)
+        ic = INDEX(AlphLower, str(i:i))
+        if (ic > 0) string(i:i) = AlphUpper(ic:ic)
+    end do
+
+    end Function UpperCase
+
+    function LowerCase(str) result (string)
+    !https://stackoverflow.com/questions/10759375/how-can-i-write-a-to-upper-or-to-lower-function-in-f90
+    Character(*), Intent(In) :: str
+    Character(LEN(str))      :: string
+    Integer :: ic, i
+
+    string = str
+    do i = 1, LEN_TRIM(str)
+        ic = INDEX(AlphUpper, str(i:i))
+        if (ic > 0) string(i:i) = AlphLower(ic:ic)
+    end do
+
+    end Function LowerCase
+
 
     function GetParamCount()
     integer GetParamCount
