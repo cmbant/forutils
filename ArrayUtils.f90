@@ -78,28 +78,6 @@
 
     end subroutine realloc_I
 
-    subroutine realloc_class_array(arr, new_size, keep)
-    class(*), allocatable, intent(inout) :: arr(:)
-    integer, intent(in) :: new_size
-    logical, intent(in), optional :: keep
-    integer sz
-    class(*), allocatable :: tmp(:)
-
-    if (.not. allocated(arr)) then
-        call MpiStop('class arrays can only be reallocated if already allocated')
-    end if
-    if (LBOUND(arr,1)/=1) call MpiStop('Realloc only works on arrays starting at 1')
-    if (new_size/=size(arr)) then
-        allocate(tmp(new_size), mold=arr)
-        if (DefaultTrue(keep)) then
-            sz = min(new_size, size(arr))
-            tmp(:sz) = arr(:sz)
-        end if
-        call move_alloc(tmp, arr)
-    end if
-
-    end subroutine realloc_class_array
-
     function IndexOf(aval,arr, n)
     integer, intent(in) :: n, arr(n), aval
     integer IndexOf, i
