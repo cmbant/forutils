@@ -315,7 +315,7 @@
         KL < 0  .or.  KL > 30081 ) then
     print '(A)', ' The first random number seed must have a value  between 0 and 31328'
     print '(A)',' The second seed must have a value between 0 and   30081'
-    stop
+    call MpiStop('Error in RMARIN')
     endif
     I = mod(IJ/177, 177) + 2
     J = mod(IJ    , 177) + 2

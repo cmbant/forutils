@@ -1,5 +1,6 @@
     module StringUtils
     use MiscUtils
+    use MpiUtils
     implicit none
 
 
@@ -189,7 +190,7 @@
     type is (double precision)
         S=S //RealToStr(X)
         class default
-        stop 'StringAppend: Unknown type'
+        call MpiStop('StringAppend: Unknown type')
     end select
     end subroutine
 
@@ -304,29 +305,35 @@
             call StringReplace('%'//form//c, rep, S)
         else
             write(*,*) 'Wrong format for type: '//trim(S)
-            stop
+            call error
         end if
     type is (Character(LEN=*))
         if (c/='s') then
             write(*,*) 'Wrong format for type: '//trim(S)
-            stop
+            call error
         end if
         call StringReplace('%s', X, S)
     type is (double precision)
         if (c/='f') then
             write(*,*) 'Wrong format for type: '//trim(S)
-            stop
+            call error
         end if
         call StringReplace('%f', RealToStr(X),S)
     type is (real)
         if (c/='f') then
             write(*,*) 'Wrong format for type: '//trim(S)
-            stop
+            call error
         end if
         call StringReplace('%f', RealToStr(X),S)
         class default
-        stop 'Unsupported format type'
+        write(*,*) 'Unsupported format type'
+        call error
     end select
+
+    contains
+    subroutine error
+    call MpiStop('FormatString error')
+    end subroutine
 
     end function SubNextFormat
 
@@ -349,10 +356,26 @@
     if (OK .and. present(i6)) OK = SubNextFormat(S, i6)
     if (OK .and. present(i7)) OK = SubNextFormat(S, i7)
     if (OK .and. present(i8)) OK = SubNextFormat(S, i8)
-    if (.not. OK .and. .not. DefaultFalse(allow_unused)) stop 'FormatString: Wrong number or kind of formats in string'
+    if (.not. OK .and. .not. DefaultFalse(allow_unused)) &
+        call MpiStop('FormatString: Wrong number or kind of formats in string')
     call StringReplace('%%', '%', S)
 
     end function FormatString
 
+    subroutine WriteFormat(formatst, i1,i2,i3,i4,i5,i6,i7,i8, allow_unused, unit)
+    character(LEN=*), intent(in) :: formatst
+    class(*), intent(in), optional :: i1,i2,i3,i4,i5,i6,i7,i8
+    logical, optional, intent(in) :: allow_unused
+    integer, optional:: unit
+    character(LEN=:), allocatable :: S
+
+    S=FormatString(formatst,i1,i2,i3,i4,i5,i6,i7,i8,allow_unused)
+    if (present(unit)) then
+        write(unit,'(a)') S
+    else
+        write(*,*) S
+    end if
+
+    end subroutine WriteFormat
 
     end module StringUtils

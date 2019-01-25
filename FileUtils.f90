@@ -89,7 +89,7 @@
     procedure :: WriteArrayTxt
     procedure :: WriteInLineItems
     procedure :: WriteInLineTrim
-    procedure :: WriteFormat
+    procedure :: WriteFormat => File_WriteFormat
     procedure :: WriteTrim => WriteTrimTxt
     procedure, private :: ReadStringSub => ReadStringTxt
     procedure, private :: ReadItemTxt
@@ -1123,7 +1123,7 @@
 
     end subroutine  ReadStringTxt
 
-    subroutine WriteFormat(this, formatst, i1,i2,i3,i4,i5,i6,i7,i8)
+    subroutine File_WriteFormat(this, formatst, i1,i2,i3,i4,i5,i6,i7,i8)
     class(TTextFile) :: this
     character(LEN=*), intent(in) :: formatst
     class(*), intent(in) :: i1
@@ -1132,7 +1132,7 @@
     call this%CheckOpen(.true.)
     write(this%unit,'(a)') FormatString(formatst,i1,i2,i3,i4,i5,i6,i7,i8)
 
-    end subroutine WriteFormat
+    end subroutine File_WriteFormat
 
     !Misc functions
 

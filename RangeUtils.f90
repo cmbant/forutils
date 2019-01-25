@@ -5,6 +5,7 @@
 
     module RangeUtils
     use MiscUtils
+    use MpiUtils
     implicit none
     private
 
@@ -81,7 +82,7 @@
         pointstep = this%npoints
     else
         print *, "tau=", tau, ",this%Highest=", this%Highest
-        stop 'TRanges_IndexOf: value out of range'
+        call MpiStop('TRanges_IndexOf: value out of range')
     end if
     end function TRanges_IndexOf
 
@@ -113,7 +114,7 @@
     end do
     ix =ix+1
     this%points(ix) = this%Highest
-    if (ix /= this%npoints) stop 'TRanges_GetArray: ERROR'
+    if (ix /= this%npoints) call MpiStop('TRanges_GetArray: ERROR')
 
     if (this%has_dpoints) call this%Getdpoints()
     end subroutine TRanges_GetArray
@@ -155,8 +156,8 @@
     WantLog = DefaultFalse(IsLog)
 
     if (t_end <= t_start) &
-        stop 'TRanges_Add_delta: end must be larger than start'
-    if (t_approx_delta <=0) stop 'TRanges_Add_delta: delta must be > 0'
+        call MpiStop('TRanges_Add_delta: end must be larger than start')
+    if (t_approx_delta <=0) call MpiStop('TRanges_Add_delta: delta must be > 0')
 
     if (WantLog) then
         n  = max(1,int(log(t_end/t_start)/t_approx_delta + 1.d0 - this%RangeTol))
@@ -187,8 +188,8 @@
         delta = (t_end - t_start) / nstep
     end if
 
-    if (t_end <= t_start) stop 'TRanges_Add: end must be larger than start'
-    if (nstep <= 0) stop 'TRanges_Add: nstep must be > 0'
+    if (t_end <= t_start) call MpiStop('TRanges_Add: end must be larger than start')
+    if (nstep <= 0) call MpiStop('TRanges_Add: nstep must be > 0')
 
     nreg = this%count + 1
     allocate(NewRanges(nreg))
@@ -375,18 +376,18 @@
                         if (RequestDelta(i) >= AReg%delta .and. Diff <= LastReg%Delta_min &
                             .and. LastReg%Delta_min <= max_request) then
 
-                        LastReg%Low = AReg%Low
-                        if (Diff > LastReg%Delta_min*this%RangeTol) then
-                            LastReg%steps =  LastReg%steps + 1
-                        end if
-                        if (LastReg%IsLog) then
-                            LastReg%delta = log(LastReg%High/LastReg%Low) / LastReg%steps
-                        else
-                            LastReg%delta = (LastReg%High -LastReg%Low) / LastReg%steps
-                        end if
-                        this%R(i:this%Count-1) = this%R(i+1:this%Count)
-                        this%Count = this%Count -1
-                        cycle
+                            LastReg%Low = AReg%Low
+                            if (Diff > LastReg%Delta_min*this%RangeTol) then
+                                LastReg%steps =  LastReg%steps + 1
+                            end if
+                            if (LastReg%IsLog) then
+                                LastReg%delta = log(LastReg%High/LastReg%Low) / LastReg%steps
+                            else
+                                LastReg%delta = (LastReg%High -LastReg%Low) / LastReg%steps
+                            end if
+                            this%R(i:this%Count-1) = this%R(i+1:this%Count)
+                            this%Count = this%Count -1
+                            cycle
                         end if
                     end associate
                 end if
@@ -394,18 +395,18 @@
                     associate (LastReg => this%R(i-1))
                         if (RequestDelta(i) >= AReg%delta .and. Diff <= LastReg%Delta_max &
                             .and. LastReg%Delta_max <= min_request) then
-                        LastReg%High = AReg%High
-                        !AlMat08 LastReg%Low = AReg%Low
-                        if (Diff > LastReg%Delta_max*this%RangeTol) then
-                            LastReg%steps =  LastReg%steps + 1
-                        end if
-                        if (LastReg%IsLog) then
-                            LastReg%delta = log(LastReg%High/LastReg%Low) / LastReg%steps
-                        else
-                            LastReg%delta = (LastReg%High -LastReg%Low) / LastReg%steps
-                        end if
-                        this%R(i:this%Count-1) = this%R(i+1:this%Count)
-                        this%Count = this%Count -1
+                            LastReg%High = AReg%High
+                            !AlMat08 LastReg%Low = AReg%Low
+                            if (Diff > LastReg%Delta_max*this%RangeTol) then
+                                LastReg%steps =  LastReg%steps + 1
+                            end if
+                            if (LastReg%IsLog) then
+                                LastReg%delta = log(LastReg%High/LastReg%Low) / LastReg%steps
+                            else
+                                LastReg%delta = (LastReg%High -LastReg%Low) / LastReg%steps
+                            end if
+                            this%R(i:this%Count-1) = this%R(i+1:this%Count)
+                            this%Count = this%Count -1
                         end if
                     end associate
                 end if

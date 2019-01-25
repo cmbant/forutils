@@ -51,6 +51,9 @@
     call MPI_ABORT(MPI_COMM_WORLD,i)
 #endif
     i=1     !put breakpoint on this line to debug
+#ifndef MPI
+    if (msg/='') error stop
+#endif
     stop
 
     end subroutine MpiStop
