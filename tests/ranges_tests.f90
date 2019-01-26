@@ -7,6 +7,7 @@
     function RunRangesTests() result (fails)
     integer fails
     Type(TRanges) R
+    double precision, allocatable :: tmp(:)
 
     fails = 0
     !Combine set of ranges with specified approx maximum spacing in each
@@ -33,6 +34,27 @@
     if (R%points(5)/=2.d0 .or. abs(R%Points(2)-0.01d0)>1e-5) then
         fails = fails + 1
         print *, 'Error in log range', R%Points
+    end if
+    !Test ordering invariance (not generally true, but is here)
+    call R%Free()
+    call R%Add(1d-3, 10.d0, 4, isLog=.true.)
+    call R%Add_delta(0.d0, 3.d0, 1.d0)
+    ! call R%Add_delta(0.5d0, 3.1d0, 0.1d0)
+
+    call R%GetArray()
+    allocate(tmp, source = R%Points)
+    call R%Free()
+    !  call R%Add_delta(0.5d0, 3.1d0, 0.1d0)
+    call R%Add_delta(0.d0, 3.d0, 1.d0)
+    call R%Add(1d-3, 10.d0, 4, isLog=.true.)
+    call R%GetArray()
+    if (size(tmp) /= size(R%Points)) then
+        fails = fails + 1
+        print *, 'Error in size on range add ordering'
+        print *, tmp, R%Points
+    elseif (any(abs(tmp-R%points)>1d-7)) then
+        fails = fails + 1
+        print *, 'Error in range add ordering'
     end if
 
     if (fails==0) print *, 'Ranges OK'

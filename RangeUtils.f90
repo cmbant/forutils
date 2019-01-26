@@ -200,7 +200,7 @@
         AReg%IsLog = WantLog
     end associate
 
-    !Get end point in order
+    !Get end points in order
     ix = 0
     do i=1, nreg
         associate (AReg => NewRanges(i))
@@ -271,10 +271,9 @@
             AReg%Low = EndPoints(i)
             AReg%High = EndPoints(i+1)
 
-            ! max_delta = EndPoints(i+1) - EndPoints(i)
-            delta = max_delta
+            delta = max_delta  ! max_delta = EndPoints(i+1) - EndPoints(i)
             AReg%IsLog = .false.
-
+            !Loop over requested ranges to find step size "delta" required to satisfy requirements for this AReg
             do j=1, nreg
                 if (AReg%Low >= NewRanges(j)%Low .and. AReg%Low < NewRanges(j)%High) then
                     if (NewRanges(j)%IsLog) then
@@ -284,11 +283,11 @@
                             min_log_step = AReg%Low*(exp(NewRanges(j)%delta)-1)
                             if (min_log_step < delta) then
                                 max_log_step = AReg%High*(1-exp(-NewRanges(j)%delta))
-                                if  (delta < max_log_step) then
-                                    delta = min_log_step
-                                else
-                                    AReg%IsLog = .true.
+                                AReg%IsLog = .true.
+                                if (max_log_step <= delta) then
                                     delta = NewRanges(j)%delta
+                                else
+                                    delta = -log(1-delta/AReg%High)
                                 end if
                             end if
                         end if
@@ -297,10 +296,11 @@
                             max_log_step = AReg%High*(1-exp(-delta))
                             if (NewRanges(j)%delta < max_log_step) then
                                 min_log_step = AReg%Low*(exp(delta)-1)
-                                AReg%IsLog = .false.
                                 if (min_log_step <  NewRanges(j)%delta) then
-                                    delta =  min_log_step
+                                    !This is obviously not as good as splitting up the range
+                                    delta = -log(1-NewRanges(j)%delta/AReg%High)
                                 else
+                                    AReg%IsLog = .false.
                                     delta = NewRanges(j)%delta
                                 end if
                             end if
@@ -359,7 +359,8 @@
                 if (i/= this%count) then
                     associate (LastReg => this%R(i+1))
                         if (RequestDelta(i) >= AReg%delta .and. Diff <= LastReg%Delta_min &
-                            .and. LastReg%Delta_min <= max_request) then
+                            .and. LastReg%Delta_min <= max_request .and. &
+                             (.not. LastReg%IsLog .or. AReg%Low > LastReg%Low*exp(-LastReg%delta))) then
 
                             LastReg%Low = AReg%Low
                             if (Diff > LastReg%Delta_min*this%RangeTol) then
