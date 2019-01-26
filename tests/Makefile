@@ -18,7 +18,7 @@ libforutils:
 	$(MAKE) -C '..' $(OUTPUT)
 
 FILES = array_tests ObjectLists_tests interpolation_tests inifile_tests \
-        file_tests string_tests run_tests
+        file_tests string_tests ranges_tests run_tests
 
 OBJS = $(patsubst %,$(OUTPUT_DIR)/%.o,$(FILES))
 
