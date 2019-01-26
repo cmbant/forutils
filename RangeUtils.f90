@@ -198,7 +198,15 @@
     !Add existing ranges adjusting existing bounds if overlapping non-trivially
     do i=1, this%count
         associate(R => this%R(i))
-            if (NewR%Delta_min < R%Delta_max .and. NewR%High > R%Low .and. NewR%Low < R%High) then
+            if (NewR%Low >= R%Low .and. NewR%High <= R%High .and. &
+                (NewR%Delta_min >= R%Delta_max .or. (NewR%IsLog .eqv. R%IsLog)  .and. NewR%delta >= R%delta)) then
+                !New range wider than existing
+                return
+            else if (NewR%Low <= R%Low .and. NewR%High >= R%High .and. &
+                (NewR%Delta_min <= R%Delta_min .or. (NewR%IsLog .eqv. R%IsLog)  .and. NewR%delta <= R%delta)) then
+                !R is completely inside and wider than new one
+                cycle
+            else if (NewR%Delta_min < R%Delta_max .and. NewR%High > R%Low .and. NewR%Low < R%High) then
                 if (R%isLog .and. .not. NewR%isLog) then
                     !Find point where log and linear spacing become equally fine
                     nsteps = int(log(NewR%delta/(exp(R%delta)-1)/R%Low)/R%delta+1)
@@ -236,12 +244,6 @@
                         call SetDelta(R, R%delta)
                     end if
                 end if
-            else if (NewR%Delta_min < R%Delta_min .and. NewR%Low <= R%Low .and. NewR%High >= R%High) then
-                !R is completely inside and wider than new one
-                cycle
-            else if (NewR%Delta_min > R%Delta_max .and. NewR%Low >= R%Low .and. NewR%High <= R%High) then
-                !New range wider than existing
-                return
             end if
             call AddRange(R)
         end associate
