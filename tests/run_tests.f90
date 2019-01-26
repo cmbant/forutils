@@ -6,6 +6,7 @@
     use FileTests
     use StringTests
     use ArrayTests
+    use RangesTests
     implicit none
 
     integer :: fails =0
@@ -17,6 +18,7 @@
     fails = fails + RunInterpolationTests()
     fails = fails + RunStringTests()
     fails = fails + RunFileTests()
+    fails = fails + RunRangesTests()
     fails = fails + RunIniTests()
 
     print *, 'Total fails: ', fails

@@ -6,6 +6,7 @@
     module RangeUtils
     use MiscUtils
     use MpiUtils
+    use ArrayUtils
     implicit none
     private
 
