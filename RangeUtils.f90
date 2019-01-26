@@ -167,7 +167,7 @@
     logical, intent(in), optional :: IsLog
     double precision, intent(in) :: t_start, t_end
     integer, intent(in) :: nstep
-    type(TRange), allocatable, target :: NewRanges(:), tmp(:)
+    type(TRange), allocatable, target :: NewRanges(:)
     double precision, allocatable :: EndPoints(:), RequestDelta(:)
     integer :: ixin, nreg, ix, i,j, nsteps
     double precision :: min_request, max_request, min_log_step, max_log_step
