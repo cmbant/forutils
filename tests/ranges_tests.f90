@@ -28,10 +28,17 @@
     end if
     call R%Free()
     call R%Add(1d-3, 10.d0, 4, isLog=.true.)
+    call R%Add_delta(-2.d0, 3.d0, 1.d0)
     call R%GetArray()
+    if (R%Points(1)/=-2.d0 .or. abs(R%Points(4)-1d-2)>1d-10) then
+        fails = fails + 1
+        print *, 'Error in neg range', R%Points
+    end if
+    call R%Free()
+    call R%Add(1d-3, 10.d0, 4, isLog=.true.)
     call R%Add_delta(1.d0, 15.d0, 1.d0)
     call R%GetArray()
-    if (R%points(5)/=2.d0 .or. abs(R%Points(2)-0.01d0)>1e-5) then
+    if (abs(R%points(5)-2.d0) > 1d-10 .or. abs(R%Points(2)-0.01d0)>1d-10) then
         fails = fails + 1
         print *, 'Error in log range', R%Points
     end if
@@ -39,22 +46,22 @@
     call R%Free()
     call R%Add(1d-3, 10.d0, 4, isLog=.true.)
     call R%Add_delta(0.d0, 3.d0, 1.d0)
-    ! call R%Add_delta(0.5d0, 3.1d0, 0.1d0)
-
     call R%GetArray()
     allocate(tmp, source = R%Points)
     call R%Free()
-    !  call R%Add_delta(0.5d0, 3.1d0, 0.1d0)
     call R%Add_delta(0.d0, 3.d0, 1.d0)
     call R%Add(1d-3, 10.d0, 4, isLog=.true.)
     call R%GetArray()
     if (size(tmp) /= size(R%Points)) then
         fails = fails + 1
         print *, 'Error in size on range add ordering'
-        print *, tmp, R%Points
+        print *, 'arr 1', tmp
+        print *, 'arr 2 ', R%Points
     elseif (any(abs(tmp-R%points)>1d-7)) then
         fails = fails + 1
         print *, 'Error in range add ordering'
+        print *, 'arr 1', tmp
+        print *, 'arr 2 ', R%Points
     end if
 
     if (fails==0) print *, 'Ranges OK'

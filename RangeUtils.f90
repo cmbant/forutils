@@ -167,12 +167,13 @@
     logical, intent(in), optional :: IsLog
     double precision, intent(in) :: t_start, t_end
     integer, intent(in) :: nstep
-    type(TRange), allocatable, target :: NewRanges(:)
+    type(TRange), allocatable, target :: NewRanges(:), tmp(:)
     double precision, allocatable :: EndPoints(:), RequestDelta(:)
     integer :: ixin, nreg, ix, i,j, nsteps
     double precision :: min_request, max_request, min_log_step, max_log_step
-    double precision :: delta, diff, max_delta
+    double precision :: delta, diff, max_delta, splitpt
     logical :: WantLog
+    type(TRange) :: NewR, TmpR
 
     WantLog = DefaultFalse(IsLog)
 
@@ -185,20 +186,72 @@
     if (t_end <= t_start) call MpiStop('TRanges_Add: end must be larger than start')
     if (nstep <= 0) call MpiStop('TRanges_Add: nstep must be > 0')
 
-    nreg = this%count + 1
-    allocate(NewRanges(nreg))
-    if (allocated(this%R) .and. this%count > 0) then
-        NewRanges(1:this%count) = this%R(1:this%count)
-    end if
+    nreg = 0
+    allocate(NewRanges(this%count+1))
+    NewR%Low   = t_start
+    NewR%High  = t_end
+    NewR%delta = delta
+    NewR%steps = nstep
+    NewR%IsLog = WantLog
+    call Setmins(NewR)
+
+    !Add existing ranges adjusting existing bounds if overlapping non-trivially
+    do i=1, this%count
+        associate(R => this%R(i))
+            if (NewR%Delta_min < R%Delta_max .and. NewR%High > R%Low .and. NewR%Low < R%High) then
+                if (R%isLog .and. .not. NewR%isLog) then
+                    !Find point where log and linear spacing become equally fine
+                    nsteps = int(log(NewR%delta/(exp(R%delta)-1)/R%Low)/R%delta+1)
+                    splitpt = R%Low*exp(R%delta*nsteps)
+                    if (splitpt*(1-exp(-R%delta)) > NewR%delta*(1+this%RangeTol)) then
+                        splitpt = NewR%delta/(1-exp(-R%delta))
+                    end if
+
+                    if (splitpt < R%High) then
+                        if (R%High > NewR%High) then
+                            TmpR%Low = NewR%High
+                            TmpR%High = R%High
+                            TmpR%IsLog = R%IsLog
+                            call SetDelta(TmpR, R%Delta)
+                            call AddRange(TmpR)
+                        end if
+                        R%High = max(NewR%Low, splitpt)
+                        call SetDelta(R, R%delta)
+                    end if
+                else if (.not. R%IsLog .and. NewR%IsLog) then
+                    nsteps = int(log(R%delta/(exp(NewR%delta)-1)/NewR%Low)/NewR%delta+1)
+                    splitpt = NewR%Low*exp(NewR%delta*nsteps)
+                    if (splitpt*(1-exp(-NewR%delta)) > R%delta*(1+this%RangeTol)) then
+                        splitpt = R%delta/(1-exp(-NewR%delta))
+                    end if
+                    if (splitpt < R%High .and. splitpt > R%Low) then
+                        if (R%Low < NewR%Low) then
+                            TmpR%Low = R%Low
+                            TmpR%High = NewR%Low
+                            TmpR%IsLog = R%IsLog
+                            call SetDelta(TmpR, R%delta)
+                            call AddRange(TmpR)
+                        end if
+                        R%Low = min(NewR%High, splitpt)
+                        call SetDelta(R, R%delta)
+                    end if
+                end if
+            else if (NewR%Delta_min < R%Delta_min .and. NewR%Low <= R%Low .and. NewR%High >= R%High) then
+                !R is completely inside and wider than new one
+                cycle
+            else if (NewR%Delta_min > R%Delta_max .and. NewR%Low >= R%Low .and. NewR%High <= R%High) then
+                !New range wider than existing
+                return
+            end if
+            call AddRange(R)
+        end associate
+    end do
+    if (allocated(this%R)) deallocate(this%R)
+    if (nreg>0) allocate(this%R, source = NewRanges(1:nreg))
+    this%count = nreg
+    call AddRange(NewR)
 
     allocate(EndPoints(0:nreg * 2))
-    associate (AReg => NewRanges(nreg))
-        AReg%Low   = t_start
-        AReg%High  = t_end
-        AReg%delta = delta
-        AReg%steps = nstep
-        AReg%IsLog = WantLog
-    end associate
 
     !Get end points in order
     ix = 0
@@ -310,35 +363,9 @@
                     end if
                 end if
             end do
-
-            if (AReg%IsLog) then
-                Diff = log(AReg%High/AReg%Low)
-            else
-                Diff = AReg%High - AReg%Low
-            endif
-            if (delta >= Diff) then
-                AReg%delta = Diff
-                AReg%steps = 1
-            else
-                AReg%steps  = max(1,int(Diff/delta + 1.d0 - this%RangeTol))
-                AReg%delta = Diff / AReg%steps
-            end if
-
+            call SetDelta(AReg, delta)
             this%count = this%count + 1
             RequestDelta(this%count) = delta
-
-            if (AReg%IsLog) then
-                if (AReg%steps ==1) then
-                    AReg%Delta_min = AReg%High - AReg%Low
-                    AReg%Delta_max = AReg%Delta_min
-                else
-                    AReg%Delta_min = AReg%Low*(exp(AReg%delta)-1)
-                    AReg%Delta_max = AReg%High*(1-exp(-AReg%delta))
-                end if
-            else
-                AReg%Delta_max = AReg%delta
-                AReg%Delta_min = AReg%delta
-            end if
         end associate
     end do
 
@@ -360,7 +387,7 @@
                     associate (LastReg => this%R(i+1))
                         if (RequestDelta(i) >= AReg%delta .and. Diff <= LastReg%Delta_min &
                             .and. LastReg%Delta_min <= max_request .and. &
-                             (.not. LastReg%IsLog .or. AReg%Low > LastReg%Low*exp(-LastReg%delta))) then
+                            (.not. LastReg%IsLog .or. AReg%Low > LastReg%Low*exp(-LastReg%delta))) then
 
                             LastReg%Low = AReg%Low
                             if (Diff > LastReg%Delta_min*this%RangeTol) then
@@ -422,6 +449,60 @@
     end do
 
     this%npoints = nsteps
+
+    contains
+
+    subroutine Setmins(AReg)
+    type(TRange), intent(inout) :: Areg
+
+    if (AReg%IsLog) then
+        if (AReg%steps ==1) then
+            AReg%Delta_min = AReg%High - AReg%Low
+            AReg%Delta_max = AReg%Delta_min
+        else
+            AReg%Delta_min = AReg%Low*(exp(AReg%delta)-1)
+            AReg%Delta_max = AReg%High*(1-exp(-AReg%delta))
+        end if
+    else
+        AReg%Delta_max = AReg%delta
+        AReg%Delta_min = AReg%delta
+    end if
+    end subroutine
+
+    subroutine SetDelta(AReg, delta)
+    Type(TRange) :: AReg
+    double precision, intent(in) :: delta
+    double precision Diff
+
+    if (AReg%IsLog) then
+        Diff = log(AReg%High/AReg%Low)
+    else
+        Diff = AReg%High - AReg%Low
+    endif
+    if (delta >= Diff) then
+        AReg%delta = Diff
+        AReg%steps = 1
+    else
+        AReg%steps  = max(1,int(Diff/delta + 1.d0 - this%RangeTol))
+        AReg%delta = Diff / AReg%steps
+    end if
+    call Setmins(AReg)
+
+    end subroutine SetDelta
+
+
+    subroutine AddRange(R)
+    Type(TRange), intent(in) :: R
+    Type(TRange), allocatable :: Tmp(:)
+
+    nreg = nreg +1
+    if (nreg> size(NewRanges)) then
+        allocate(tmp(nreg+3))
+        tmp(:nreg-1) = NewRanges(:nreg-1)
+        call move_alloc(tmp, NewRanges)
+    end if
+    NewRanges(nreg) = R
+    end subroutine
 
     end subroutine TRanges_Add
 
