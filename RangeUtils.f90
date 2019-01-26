@@ -297,11 +297,11 @@
                             max_log_step = AReg%High*(1-exp(-delta))
                             if (NewRanges(j)%delta < max_log_step) then
                                 min_log_step = AReg%Low*(exp(delta)-1)
+                                AReg%IsLog = .false.
                                 if (min_log_step <  NewRanges(j)%delta) then
-                                    AReg%IsLog = .false.
                                     delta =  min_log_step
                                 else
-                                    delta = - log(1- NewRanges(j)%delta/AReg%High)
+                                    delta = NewRanges(j)%delta
                                 end if
                             end if
                         else
