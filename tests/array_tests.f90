@@ -18,7 +18,7 @@
     call reallocate(arrI,5)
     arrI(3)=4
     call reallocate(arrI,8)
-    if (arr(2.)/=2. .or. arrI(3)/=4) then
+    if (arr(2)/=2. .or. arrI(3)/=4) then
         fails = fails+1
         print *, 'Error in realloc'
     end if
