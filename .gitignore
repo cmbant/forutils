@@ -2,6 +2,10 @@
 .DS_Store
 *.suo
 *.user
+*.bin
+tester_Debug
+tester_Release
+_*
 .vs/
 x64/
 Debug/
