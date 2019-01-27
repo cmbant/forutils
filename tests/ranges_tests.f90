@@ -8,6 +8,7 @@
     integer fails
     Type(TRanges) R
     double precision, allocatable :: tmp(:)
+    double precision, pointer :: P(:)
 
     fails = 0
     !Combine set of ranges with specified approx maximum spacing in each
@@ -62,6 +63,36 @@
         print *, 'Error in range add ordering'
         print *, 'arr 1', tmp
         print *, 'arr 2 ', R%Points
+    end if
+
+    call R%Free()
+    call R%Add_delta(1.d0, 5.d0, 1.d0)
+    call R%Add(1d-3, 4.d0, 4, isLog=.true.)
+    call R%GetArray()
+    if (abs(R%points(5)-1)>1d-10) then
+        fails = fails + 1
+        print *, 'error in log left of linear'
+        print *, R%points
+    end if
+    deallocate(tmp)
+    allocate(tmp, source = R%Array())
+    call R%Free()
+    call R%Add(1d-3, 4.d0, 4, isLog=.true.)
+    call R%Add_delta(1.d0, 5.d0, 1.d0)
+    if (any(abs(R%Array() - tmp)>1d-10)) then
+        fails = fails + 1
+        print *, 'error in linear right of log'
+        print *, R%points
+    end if
+    call R%Free()
+    call R%Add(1d-3, 4.d0, 4, isLog=.true.)
+    call R%Add_delta(3.d0, 7.d0, 1.d0)
+    call R%Add_delta(2.d0, 4.3d0, 0.1d0)
+    P => R%Array()
+    if (abs(P(size(P)-1)-6.1d0)>1d-10) then
+        fails = fails + 1
+        print *, 'error in intersecting arrays'
+        print *, R%Array()
     end if
 
     if (fails==0) print *, 'Ranges OK'

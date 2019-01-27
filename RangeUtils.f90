@@ -31,10 +31,13 @@
         !dpoints is (points(i+1)-points(i-1))/2
         double precision :: RangeTol = 0.1d0
         !fraction of bin width we are prepared for merged bin widths to increase by
+        logical, private :: changed = .true.
     contains
     procedure :: Init => TRanges_Free
     procedure :: Free => TRanges_Free
     procedure :: IndexOf => TRanges_IndexOf
+    procedure :: Array => TRanges_Array
+    procedure :: dArray => TRanges_dArray
     procedure :: GetArray => TRanges_GetArray
     procedure :: Getdpoints => TRanges_Getdpoints
     procedure :: Add_delta => TRanges_Add_delta
@@ -57,6 +60,7 @@
     this%count = 0
     this%npoints = 0
     this%has_dpoints = .false.
+    this%changed = .true.
     end subroutine TRanges_Free
 
 
@@ -87,6 +91,28 @@
     end if
     end function TRanges_IndexOf
 
+    function TRanges_Array(this)
+    class(TRanges), intent(inout), target :: this
+    double precision, pointer :: TRanges_Array(:)
+
+    if (this%changed) call this%GetArray(this%has_dpoints)
+    TRanges_Array => this%points
+
+    end function TRanges_Array
+
+    function TRanges_dArray(this)
+    class(TRanges), intent(inout), target :: this
+    double precision, pointer :: TRanges_dArray(:)
+
+    if (this%changed) then
+        call this%GetArray(.true.)
+    else if (.not. this%has_dpoints) then
+        call this%Getdpoints()
+        this%has_dpoints = .true.
+    end if
+    TRanges_dArray => this%dpoints
+
+    end function TRanges_dArray
 
     subroutine TRanges_GetArray(this, want_dpoints)
     class(TRanges), intent(inout) :: this
@@ -113,7 +139,7 @@
     ix =ix+1
     this%points(ix) = this%Highest
     if (ix /= this%npoints) call MpiStop('TRanges_GetArray: ERROR')
-
+    this%changed= .false.
     if (this%has_dpoints) call this%Getdpoints()
     end subroutine TRanges_GetArray
 
@@ -248,6 +274,7 @@
             call AddRange(R)
         end associate
     end do
+    this%changed = .true.
     if (allocated(this%R)) deallocate(this%R)
     if (nreg>0) allocate(this%R, source = NewRanges(1:nreg))
     this%count = nreg
