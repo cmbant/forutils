@@ -1,5 +1,11 @@
 
 MPIF90C ?= mpif90
+mpierr= $(shell which $(MPIF90C) >/dev/null 2>&1; echo $$?)
+ifneq "$(mpierr)" "0"
+MPIF90C =
+endif
+
+MAKEOPT = --no-print-directory
 
 # There are ___ kinds of F90 flags defined:
 # F90COMMONFLAGS: These flags are specified for each kind (Debug, Release) of compilation
@@ -16,6 +22,7 @@ endif
 ifeq "$(ifortErr)" "0"
 
 ifortVer_major = $(shell ifort -v 2>&1 | cut -d " " -f 3 | cut -d. -f 1)
+compiler_ver = $(shell ifort -v 2>&1)
 #Intel compiler
 F90C     ?= ifort
 F90DEBUGFLAGS ?= -g -traceback
@@ -37,6 +44,7 @@ endif
 
 else
 
+compiler_ver = $(shell gfortran -dumpversion 2>&1)
 F90C ?= gfortran
 F90COMMONFLAGS ?= -cpp -ffree-line-length-none -fmax-errors=4 -MMD -fopenmp -fPIC
 F90DEBUGFLAGS ?= -g -O0 -fbacktrace
