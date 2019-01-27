@@ -2,6 +2,8 @@
     use FileUtils
     implicit none
 
+    character(LEN=*), parameter :: temp_file='test.tmp'
+
     !Some things are already tested in ObjectLists_tests
 
     contains
@@ -19,7 +21,7 @@
     St = 'test string'
     St(len(St):len(St)) = 'c'
 
-    call T%CreateFile('_test.txt')
+    call T%CreateFile(temp_file)
 
     call T%Write('#comment header')
     call T%Write(' ')
@@ -29,7 +31,7 @@
     call T%Close()
 
     line = 0
-    do while (T%ReadNextContentLine('_test.txt',InLine))
+    do while (T%ReadNextContentLine(temp_file,InLine))
         line = line+1
         if (line==1) then
             if (Inline/=St) then
@@ -45,7 +47,7 @@
         end if
     end do
 
-    call T%Open('_test.txt')
+    call T%Open(temp_file)
     if (T%ReadLineSkipEmptyAndComments(InLine, Comment)) then
         if (comment/='comment header') then
             fails = fails+1
@@ -55,7 +57,7 @@
         fails= fails+1
         print *, 'Error reading line'
     end if
-    call T%Close(del = .true.)
+    call T%Close(del=.true.)
     if (fails==0) print *,'OK file tests'
 
     end function RunFileTests

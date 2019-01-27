@@ -2,10 +2,9 @@
 .DS_Store
 *.suo
 *.user
-*.bin
+*.tmp
 tester_Debug
 tester_Release
-_*
 .vs/
 x64/
 Debug/

@@ -2,6 +2,7 @@
     use IniObjects
     use StringUtils
     use FileUtils
+    use FileTests
     implicit none
     character(LEN=0), target :: Empty_String = ''
 
@@ -24,16 +25,16 @@
     double precision y
     Type(TTextFile) T
 
-    call T%CreateFile('_test.ini')
+    call T%CreateFile(temp_file)
     Lines(1) = 'parameter = ../tester'
     Lines(2) = 'x = 3.04'
     call T%Write(Lines(1))
     call T%Write(Lines(2))
     call T%Close()
     print *, 'Wrote ini OK'
-    call Ini%Open('_test.ini')
+    call Ini%Open(temp_file)
     print *, 'Read ini OK'
-    call File%Delete('_test.ini')
+    call File%Delete(temp_file)
     if (Ini%Read_String('parameter')/='../tester') then
         print *, 'error reading '//trim(Lines(1))
         fails = fails + 1

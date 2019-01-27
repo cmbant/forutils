@@ -17,8 +17,8 @@ Release:
 
 OUTPUT_DIR=../$(OUTPUT)
 
-FILES = array_tests ObjectLists_tests interpolation_tests inifile_tests \
-        file_tests string_tests ranges_tests run_tests
+FILES = file_tests array_tests ObjectLists_tests interpolation_tests inifile_tests \
+           string_tests ranges_tests run_tests
 
 OBJS = $(patsubst %,$(OUTPUT_DIR)/%.o,$(FILES))
 
@@ -35,7 +35,7 @@ run: Release Debug
 
 clean:
 	@$(MAKE) -C '..' $(MAKEOPT) clean
-	rm -f _*.ini _*.txt *.bin
+	rm -f *.tmp
 
 delete: clean
 	rm -f tester_*

@@ -1,6 +1,7 @@
     module InterpolationTests
     use Interpolation
     use FileUtils
+    use FileTests
     implicit None
     integer, parameter, private :: sp= KIND(1.d0)
 
@@ -90,10 +91,10 @@
         print *, funcarray
     end if
 
-    call FB%CreateFile('test.bin')
+    call FB%CreateFile(temp_file)
     call Irreg%SaveState(FB)
     call FB%Close()
-    call FB%Open('test.bin')
+    call FB%Open(temp_file)
     call IrregLoad%loadState(FB)
     call FB%Close()
     if (abs( IrregLoad%Value(testval) -Irreg%Value(testval))<1e-8) then
@@ -102,10 +103,10 @@
         fails = fails+1
         print *, 'Load bin error'
     end if
-    call FB%CreateFile('test.bin')
+    call FB%CreateFile(temp_file)
     call Reg%SaveState(FB)
     call FB%Close()
-    call FB%Open('test.bin')
+    call FB%Open(temp_file)
     call RegLoad%loadState(FB)
     call FB%Close()
     if (abs( RegLoad%Value(testval) -Reg%Value(testval))<1e-8) then
@@ -114,7 +115,7 @@
         fails = fails+1
         print *, 'Load bin2 error'
     end if
-    call File%Delete('test.bin')
+    call File%Delete(temp_file)
     
     end function RunInterpolationTests
 

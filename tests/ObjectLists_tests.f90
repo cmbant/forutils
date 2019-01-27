@@ -1,6 +1,7 @@
     module ListTests
     use ObjectLists
     use FileUtils
+    use FileTests
     implicit none
     character(LEN=0), target :: Empty_String = ''
 
@@ -35,14 +36,14 @@
     call L%Add(arr4)
     call checkL()
 
-    call F%CreateFile('tester.bin')
+    call F%CreateFile(temp_file)
     call L%SaveBinary(F%unit)
     call F%Close()
     call L%Clear()
-    call F%Open('tester.bin')
+    call F%Open(temp_file)
     call L%ReadBinary(F%unit)
     call F%Close()
-    call F%CreateFile('tester.bin')
+    call F%CreateFile(temp_file)
     call L%SaveBinary(F%unit)
     call F%Close(del = .true.)
     call checkL()
@@ -162,10 +163,10 @@
     class(TObjectList) T
     integer unit
 
-    open (newunit=unit,file='test.bin',status='replace', form='unformatted')
+    open (newunit=unit,file=temp_file,status='replace', form='unformatted')
     call T%SaveBinary(unit)
     close(unit)
-    open (newunit=unit,file='test.bin',status='old', form='unformatted')
+    open (newunit=unit,file=temp_file,status='old', form='unformatted')
     call T%Clear()
     call T%ReadBinary(unit)
     close(unit, status = 'DELETE')
