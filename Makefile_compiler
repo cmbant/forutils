@@ -23,6 +23,10 @@ ifeq "$(ifortErr)" "0"
 
 ifortVer_major = $(shell ifort -v 2>&1 | cut -d " " -f 3 | cut -d. -f 1)
 compiler_ver = $(shell ifort -v 2>&1)
+ifeq ($(shell test $(ifortVer_major) -lt 14; echo $$?),0)
+$(error You need ifort 14 or higher [preferably 18.0.1+], or use gfortran 6+)
+endif
+
 #Intel compiler
 F90C     ?= ifort
 F90DEBUGFLAGS ?= -g -traceback
@@ -46,7 +50,7 @@ else
 
 major_version = $(shell gfortran -dumpversion 2>&1 | cut -d " " -f 3 | cut -d. -f 1)
 ifneq ($(shell test $(major_version) -gt 5; echo $$?),0)
-$(error gfortran version 6.3 or higher is required)
+$(error gfortran version 6.3 or higher (or ifort 14+) is required)
 endif
 compiler_ver = $(shell gfortran -dumpversion 2>&1)
 
