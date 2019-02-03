@@ -28,7 +28,6 @@ matrix:
         - HUB="zbeekman/nightly-gcc-trunk-docker-image"
         - COMMAND="-c /forutils/tests/run_tests.sh"
   allow_failures:
-        - name: "trunk"
         - name: "GCC6"
  
 services:
