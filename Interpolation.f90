@@ -974,8 +974,8 @@
     !Z matrix not stored internally to save mem, so must pass again
     class(TInterpGrid2D) :: this
     integer, intent(in) :: nip
-    real(GI), intent(out):: z(*)
-    real(GI), intent(in) :: x(*),y(*)
+    real(GI), intent(out):: z(nip)
+    real(GI), intent(in) :: x(nip),y(nip)
     integer, intent(inout), optional :: error
     integer md,ier
 

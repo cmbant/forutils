@@ -1,10 +1,4 @@
 
-MPIF90C ?= mpif90
-mpierr= $(shell which $(MPIF90C) >/dev/null 2>&1; echo $$?)
-ifneq "$(mpierr)" "0"
-MPIF90C =
-endif
-
 MAKEOPT = --no-print-directory
 
 # There are ___ kinds of F90 flags defined:
@@ -29,6 +23,12 @@ endif
 
 #Intel compiler
 F90C     ?= ifort
+
+mpierr= $(shell which mpiifort >/dev/null 2>&1; echo $$?)
+ifeq "$(mpierr)" "0"
+MPIF90C  ?= mpiifort -fc=ifort
+endif
+
 F90DEBUGFLAGS ?= -g -traceback
 F90RELEASEFLAGS ?= -fast
 ifeq ($(shell test $(ifortVer_major) -gt 15; echo $$?),0)
@@ -60,6 +60,18 @@ F90DEBUGFLAGS ?= -g -O0 -fbacktrace
 F90RELEASEFLAGS ?= -O3 -ffast-math
 MODLINK=-J
 
+endif
+
+
+ifneq ($(NERSC_HOST),)
+#special-case setting for NERSC machines
+MPIF90C = ftn
+endif
+MPIF90C ?= mpif90
+#Check if MPI compiler found
+mpierr= $(shell which $(MPIF90C) >/dev/null 2>&1; echo $$?)
+ifneq "$(mpierr)" "0"
+MPIF90C =
 endif
 
 # When no library archiver is set yet, use ar.
