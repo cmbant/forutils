@@ -22,6 +22,11 @@ matrix:
         - GCC_VERSION="8"
         - HUB="cmbant/docker-gcc-build:gcc8"
         - COMMAND="/bin/bash -c /forutils/tests/run_tests.sh"
+    - name: "GCC9"
+      env:
+        - GCC_VERSION="9"
+        - HUB="cmbant/docker-gcc-build:gcc9"
+        - COMMAND="/bin/bash -c /forutils/tests/run_tests.sh"
     - name: "trunk"
       env:
         - GCC_VERSION="trunk"
