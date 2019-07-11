@@ -29,7 +29,7 @@ Releaselib:
 	@$(MAKE) OUTPUT_DIR=Releaselib $(MAKEOPT) directories
 
 ReleaseMPI:
-	@$(MAKE) OUTPUT_DIR=ReleaseMPI F90C=$(MPIF90C) F90FLAGS="$(F90RELEASEFLAGS) -DMPI" $(MAKEOPT) directories
+	@$(MAKE) OUTPUT_DIR=ReleaseMPI F90C="$(MPIF90C)" F90FLAGS="$(F90RELEASEFLAGS) -DMPI" $(MAKEOPT) directories
 
 Debug:
 	@$(MAKE) OUTPUT_DIR=Debug F90FLAGS="$(F90DEBUGFLAGS)" $(MAKEOPT) directories
@@ -38,7 +38,7 @@ Debuglib:
 	@$(MAKE) OUTPUT_DIR=Debuglib $(MAKEOPT) directories
 
 DebugMPI:
-	@$(MAKE) OUTPUT_DIR=DebugMPI F90C=$(MPIF90C) F90FLAGS="$(F90DEBUGFLAGS) -DMPI" $(MAKEOPT) directories
+	@$(MAKE) OUTPUT_DIR=DebugMPI F90C="$(MPIF90C)" F90FLAGS="$(F90DEBUGFLAGS) -DMPI" $(MAKEOPT) directories
 
 cur_ver := $(shell cat compiler.ver 2>&1 || echo "")
 ifneq ($(cur_ver),$(compiler_ver))
