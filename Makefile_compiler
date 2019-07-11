@@ -69,7 +69,8 @@ MPIF90C = ftn
 endif
 MPIF90C ?= mpif90
 #Check if MPI compiler found
-mpierr= $(shell which $(MPIF90C) >/dev/null 2>&1; echo $$?)
+MPIF90_EXE = $(word 1, $(MPIF90C))
+mpierr= $(shell which $(MPIF90_EXE) >/dev/null 2>&1; echo $$?)
 ifneq "$(mpierr)" "0"
 MPIF90C =
 endif
