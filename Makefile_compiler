@@ -32,10 +32,14 @@ endif
 F90DEBUGFLAGS ?= -g -traceback
 F90RELEASEFLAGS ?= -fast
 ifeq ($(shell test $(ifortVer_major) -gt 15; echo $$?),0)
-F90COMMONFLAGS ?= -fpp -W0 -WB -fpic -qopenmp
+F90COMMONFLAGS ?= -fpp -W0 -WB -qopenmp
 else
-F90COMMONFLAGS ?= -fpp -W0 -WB -fpic -openmp
+F90COMMONFLAGS ?= -fpp -W0 -WB -openmp
 endif
+ifneq ($(shell uname -s),Darwin)
+F90COMMONFLAGS += -fpic
+endif
+
 MODLINK=-I
 # Intel has a special archiver for libraries.
 AREXE ?= xiar
