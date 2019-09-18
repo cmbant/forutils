@@ -1710,7 +1710,7 @@
     integer WorkSize, ierr
     integer,allocatable, dimension (:) :: IWork
     real(dm), allocatable, dimension (:) :: rv1
-    real(dm) OptWk
+    real(dm) OptWk(1)
 
     if (n<=m) call MpiStop('Matrix_SVD_VT assumed n>m. ')
 
@@ -1725,7 +1725,7 @@
 #else
         call DGESDD('O',m,n, Mat, m ,D,U,m,Mat,n,OptWk,WorkSize,IWork,ierr)
 #endif
-        WorkSize = nint(OptWk)
+        WorkSize = nint(OptWk(1))
         allocate(rv1(WorkSize))
 #ifdef MATRIX_SINGLE
         call SGESDD('O',m,n, Mat, m ,D,U,m,Mat,n,rv1,WorkSize,IWork,ierr)
