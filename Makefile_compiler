@@ -44,8 +44,8 @@ MODLINK=-I
 # Intel has a special archiver for libraries.
 AREXE ?= xiar
 ifneq "$(ifortVer_major)" "14"
-# Check whether SRC_DIR is set to prevent adding gen-dep multiple times.
-ifdef SRC_DIR
+# Check whether FORUTILS_SRC_DIR is set to prevent adding gen-dep multiple times.
+ifdef FORUTILS_SRC_DIR
 F90COMMONFLAGS += -gen-dep=$*.d
 endif
 endif
