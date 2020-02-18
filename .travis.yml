@@ -7,11 +7,6 @@ sudo: required
 
 matrix:
   include:
-    - name: "GCC6"
-      env:
-        - GCC_VERSION="6"
-        - HUB="cmbant/docker-gcc-build:gcc6"
-        - COMMAND="/bin/bash -c /forutils/tests/run_tests.sh"
     - name: "GCC7" 
       env:
         - GCC_VERSION="7"
@@ -30,10 +25,8 @@ matrix:
     - name: "trunk"
       env:
         - GCC_VERSION="trunk"
-        - HUB="zbeekman/nightly-gcc-trunk-docker-image"
+        - HUB="cmbant/docker-gcc-build:devel"
         - COMMAND="-c /forutils/tests/run_tests.sh"
-  allow_failures:
-        - name: "GCC6"
  
 services:
   - docker
