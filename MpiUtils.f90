@@ -1,8 +1,18 @@
     module MpiUtils
-#ifdef MPI
-    use mpi
-#endif
     implicit none
+#ifdef MPI
+    ! use mpi leads to .mod compiler incompatibility errors unless you are very careful
+    ! so stick to old method and add manual interface for gcc10+ compatibility
+    include "mpif.h"
+#if __GNUC__ > 9
+    interface
+    subroutine MPI_BCAST(BUFFER, COUNT, DATATYPE, ROOT, COMM, IERROR)
+    Type(*) BUFFER
+    INTEGER COUNT, DATATYPE, ROOT, COMM, IERROR
+    end subroutine
+    end interface
+#endif
+#endif
 
     integer, parameter :: TTimer_dp = Kind(1.d0)
 
@@ -83,11 +93,11 @@
         do
             call MPI_IPROBE(0,0,MPI_COMM_WORLD,flag, MPI_STATUS_IGNORE,ierr)
             if (flag) then
-                call MPI_RECV(i,1,MPI_INTEGER, 0,0,MPI_COMM_WORLD,status,ierr)
-                exit
-            end if
-            call sleep(1)
-        end do
+            call MPI_RECV(i,1,MPI_INTEGER, 0,0,MPI_COMM_WORLD,status,ierr)
+            exit
+        end if
+        call sleep(1)
+    end do
     end if
 #endif
     end subroutine
