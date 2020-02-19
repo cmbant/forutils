@@ -1,9 +1,8 @@
     module MpiUtils
-    implicit none
-
 #ifdef MPI
-    include "mpif.h"
+    use mpi
 #endif
+    implicit none
 
     integer, parameter :: TTimer_dp = Kind(1.d0)
 
@@ -48,7 +47,7 @@
 #ifdef MPI
     call mpi_comm_rank(mpi_comm_world,MPIrank,ierror)
     write (*,*) 'MpiStop: ', MpiRank
-    call MPI_ABORT(MPI_COMM_WORLD,i)
+    call MPI_ABORT(MPI_COMM_WORLD,i, ierror)
 #endif
     i=1     !put breakpoint on this line to debug
 #ifndef MPI
@@ -75,14 +74,15 @@
     subroutine MpiQuietWait
     !Set MPI thread to sleep, e.g. so can run openmp on cpu instead
 #ifdef MPI
-    integer flag, ierr, STATUS(MPI_STATUS_SIZE)
+    integer ierr, STATUS(MPI_STATUS_SIZE)
+    logical flag
     integer i, MpiId, MpiSize
 
     call MpiStat(MpiID, MpiSize)
     if (MpiID/=0) then
         do
             call MPI_IPROBE(0,0,MPI_COMM_WORLD,flag, MPI_STATUS_IGNORE,ierr)
-            if (flag/=0) then
+            if (flag) then
                 call MPI_RECV(i,1,MPI_INTEGER, 0,0,MPI_COMM_WORLD,status,ierr)
                 exit
             end if
