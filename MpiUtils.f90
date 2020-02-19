@@ -7,6 +7,7 @@
 #if __GNUC__ > 9
     interface
     subroutine MPI_BCAST(BUFFER, COUNT, DATATYPE, ROOT, COMM, IERROR)
+     !GCC$ ATTRIBUTES NO_ARG_CHECK :: BUFFER
     Type(*) BUFFER
     INTEGER COUNT, DATATYPE, ROOT, COMM, IERROR
     end subroutine
