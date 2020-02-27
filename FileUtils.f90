@@ -450,7 +450,7 @@
         read(this%unit, iostat=status) R
     type is (character(LEN=*))
         read(this%unit, iostat=status) R
-        class default
+    class default
         call this%Error('Unknown type to read')
     end select
 
@@ -486,7 +486,7 @@
         read(this%unit, iostat=status) R(1:PresentDefault(size(R),n))
     type is (logical)
         read(this%unit, iostat=status) R(1:PresentDefault(size(R),n))
-        class default
+    class default
         call this%Error('Unknown type to read')
     end select
     if (status/=0 .and. (.not. IS_IOSTAT_END(status) .or. .not. present(OK))) &
@@ -530,7 +530,7 @@
         read(this%unit, iostat=status) R
     type is (logical)
         read(this%unit, iostat=status) R
-        class default
+    class default
         call this%Error('Unknown type to read')
     end select
     if (status/=0 .and. (.not. IS_IOSTAT_END(status) .or. .not. present(OK))) &
@@ -631,7 +631,7 @@
     type is (character(LEN=*))
         Write(this%unit) len(R)
         Write(this%unit) R
-        class default
+    class default
         call this%Error('Unknown type to Write')
     end select
 
@@ -692,7 +692,7 @@
         Write(this%unit) R(1:sz)
     type is (logical)
         Write(this%unit) R(1:sz)
-        class default
+    class default
         call this%Error('Unknown type to Write')
     end select
 
@@ -712,7 +712,7 @@
         Write(this%unit) R
     type is (logical)
         Write(this%unit) R
-        class default
+    class default
         call this%Error('Unknown type to Write')
     end select
 
@@ -983,7 +983,7 @@
         write(this%unit,PresentDefault(this%IntegerFormat,form), advance=Ad) str
     type is (logical)
         write(this%unit,PresentDefault('(L2)',form), advance=Ad) str
-        class default
+    class default
         call this%Error('unknown type to write')
     end select
 
@@ -1012,7 +1012,7 @@
         write(this%unit,PresentDefault(this%IntegerFormat,form), advance=Ad) str(1:n)
     type is (logical)
         write(this%unit,PresentDefault('(*(L2))',form), advance=Ad) str(1:n)
-        class default
+    class default
         call this%Error('unknown type to write')
     end select
 
@@ -1078,7 +1078,7 @@
         Read(this%unit,*, iostat=status) R
     type is (integer)
         Read(this%unit,*, iostat=status) R
-        class default
+    class default
         call this%Error('unknown type to Read')
     end select
     if (status/=0 .and. (.not. IS_IOSTAT_END(status) .or. .not. present(OK))) &
@@ -1102,7 +1102,7 @@
         Read(this%unit,*, iostat=status) R(1:PresentDefault(size(R),n))
     type is (integer)
         Read(this%unit,*, iostat=status) R(1:PresentDefault(size(R),n))
-        class default
+    class default
         call this%Error('unknown type to Read')
     end select
 

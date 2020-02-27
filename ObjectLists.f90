@@ -384,7 +384,7 @@
     select type (Point=> this%Items(i)%P)
     class is (object_array_pointer)
         P => Point%P
-        class default
+    class default
         call this%Error('ObjectLists: item is not array item')
     end select
 
@@ -448,7 +448,7 @@
                 k=4
                 write(fid) size(P),k
                 write(fid) Point
-                class default
+            class default
                 !see e.g. https://cosmocoffee.info/viewtopic.php?f=11&t=2827
                 call this%Error('TObjectList: Unknown type to save (if gfortran, check 7.3.1 or higher)')
             end select
@@ -457,7 +457,7 @@
             sz = len(item) !len may return kind=8 in latest gfortran
             write(fid) sz, k
             write(fid) Item
-            class default
+        class default
             call this%Error('TObjectList: not implemented non-array save')
         end select
     end do
@@ -666,7 +666,7 @@
         select type (item => this%Items(i)%P)
         class is (TSaveLoadStateObject)
             call item%SaveState(F)
-            class default
+        class default
             call this%Error('TObjectList_SaveState: List contains non-TSaveLoadStateObject item')
         end select
     end do
@@ -684,7 +684,7 @@
         select type (item => this%Items(i)%P)
         class is (TSaveLoadStateObject)
             call item%LoadState(F)
-            class default
+        class default
             call this%Error('List contains non-TSaveLoadStateObject item')
         end select
     end do
@@ -736,7 +736,7 @@
             end if
             return
         end select
-        class default
+    class default
         call this%Error('TRealList: Compare not defined for this type')
     end select
 
@@ -753,7 +753,7 @@
     select type (pt=>this%Items(i)%P)
     type is (real(kind=list_prec))
         R = pt
-        class default
+    class default
         call this%Error('TRealList: object of wrong type')
     end select
 
@@ -793,7 +793,7 @@
     select type (pt=>Item)
     type is (real(kind=list_prec))
         P=> pt
-        class default
+    class default
         call this%Error('TRealArrayList: object of wrong type')
     end select
 
@@ -809,7 +809,7 @@
     select type (Arr=> C)
     Type is (real(list_prec))
         P = Arr
-        class default
+    class default
         call this%Error('TRealArrayList_Value: object of wrong type (eg. ifort 2017.0.4 bug)')
     end select
 
@@ -827,7 +827,7 @@
     select type (pt=>Item)
     type is (integer)
         P=> pt
-        class default
+    class default
         call this%Error('TIntegerArrayList: object of wrong type')
     end select
 
@@ -858,7 +858,7 @@
     select type (pt=>this%Items(i)%P)
     type is (character(LEN=*))
         S => pt
-        class default
+    class default
         call this%Error('TStringList: object of wrong type')
     end select
 
@@ -875,7 +875,7 @@
     select type (value=>this%Items(i)%Object)
     type is (character(LEN=*))
         TStringList_ValueOf=> value
-        class default
+    class default
         call this%Error('TStringList_ValueOf Object is not a string')
     end select
 
@@ -973,7 +973,7 @@
             end if
             return
         end select
-        class default
+    class default
         call this%Error('TStringList_Compare: not defined for this type')
     end select
 

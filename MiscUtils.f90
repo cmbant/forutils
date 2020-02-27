@@ -170,7 +170,7 @@
         isFloat0 = .true.
     type is (double precision)
         isFloat0 = .true.
-        class default
+    class default
         isFloat0 = .false.
     end select
     end function isFloat0

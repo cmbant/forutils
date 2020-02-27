@@ -222,7 +222,7 @@
         S = S // RealToStr(X)
     type is (double precision)
         S=S //RealToStr(X)
-        class default
+    class default
         call MpiStop('StringAppend: Unknown type')
     end select
     end subroutine
@@ -358,7 +358,7 @@
             call error
         end if
         call StringReplace('%f', RealToStr(X),S)
-        class default
+    class default
         write(*,*) 'Unsupported format type'
         call error
     end select
