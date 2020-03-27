@@ -75,7 +75,6 @@
     procedure :: SaveState => TCubicSpline_SaveState
     procedure :: IntegralArray => TCubicSpline_IntegralArray
     generic :: Init => TCubicSpline_Init, TCubicSpline_InitInt
-    FINAL :: TCubicSpline_Free !not needed in standard, just for compiler bugs
     end Type
 
     Type, extends(TSpline1D) :: TRegularCubicSpline
@@ -117,7 +116,6 @@
     procedure :: Values => TInterpGrid2D_Values !array of points
     procedure :: Clear => TInterpGrid2D_Clear
     procedure, private :: InitInterp => TInterpGrid2D_InitInterp
-    FINAL :: TInterpGrid2D_Free
     end Type TInterpGrid2D
 
 
@@ -509,13 +507,6 @@
     if (allocated(this%X)) deallocate(this%X)
 
     end subroutine TCubicSpline_Clear
-
-    subroutine TCubicSpline_Free(this)
-    Type(TCubicSpline) :: this
-
-    call this%Clear()
-
-    end subroutine TCubicSpline_Free
 
     subroutine TCubicSpline_FindNext(this, x, llo, xlo, xhi)
     !No error checking, assumes x>= x at point point llo, updating llo
@@ -947,14 +938,6 @@
     this%Initialized = .false.
 
     end subroutine TInterpGrid2D_Clear
-
-
-    subroutine TInterpGrid2D_Free(this)
-    Type(TInterpGrid2D):: this
-
-    call this%Clear()
-
-    end subroutine TInterpGrid2D_Free
 
     function TInterpGrid2D_Value(this,x,y,error) result (res)
     !Z matrix not stored internally to save mem, so must pass again
