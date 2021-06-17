@@ -37,4 +37,3 @@ install:
 script:
   - docker run -v $(pwd):/forutils -t $HUB /bin/bash -c /forutils/tests/run_tests.sh
 
-
