@@ -1,6 +1,6 @@
 os: linux
 language: shell
-dist: bionic
+dist: jammy
 
 git:
   depth: false
@@ -15,10 +15,10 @@ jobs:
       env:
         - GCC_VERSION="8"
         - HUB="cmbant/docker-gcc-build:gcc8"
-    - name: "GCC9"
+    - name: "latest"
       env:
-        - GCC_VERSION="9"
-        - HUB="cmbant/docker-gcc-build:gcc9"
+        - GCC_VERSION="latest"
+        - HUB="gcc:latest"
     - name: "trunk"
       env:
         - GCC_VERSION="trunk"
