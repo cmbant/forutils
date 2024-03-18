@@ -7,14 +7,14 @@ git:
 
 jobs:
   include:
-    - name: "GCC7" 
+    - name: "GCC9" 
       env:
-        - GCC_VERSION="7"
-        - HUB="cmbant/docker-gcc-build:gcc7"
-    - name: "GCC8"
+        - GCC_VERSION="9"
+        - HUB="gcc:9"
+    - name: "GCC11"
       env:
         - GCC_VERSION="11"
-        - HUB="gcc:11.4.0"
+        - HUB="gcc:11"
     - name: "latest"
       env:
         - GCC_VERSION="latest"
