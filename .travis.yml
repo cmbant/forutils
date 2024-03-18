@@ -13,8 +13,8 @@ jobs:
         - HUB="cmbant/docker-gcc-build:gcc7"
     - name: "GCC8"
       env:
-        - GCC_VERSION="8"
-        - HUB="cmbant/docker-gcc-build:gcc8"
+        - GCC_VERSION="11"
+        - HUB="gcc:11.4.0"
     - name: "latest"
       env:
         - GCC_VERSION="latest"
