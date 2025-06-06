@@ -7,18 +7,14 @@ git:
 
 jobs:
   include:
-    - name: "GCC9" 
-      env:
-        - GCC_VERSION="9"
-        - HUB="gcc:9"
     - name: "GCC11"
       env:
         - GCC_VERSION="11"
         - HUB="gcc:11"
-    - name: "latest"
+    - name: "GCC11"
       env:
-        - GCC_VERSION="latest"
-        - HUB="gcc:latest"
+        - GCC_VERSION="15"
+        - HUB="gcc:15"
     - name: "trunk"
       env:
         - GCC_VERSION="trunk"
