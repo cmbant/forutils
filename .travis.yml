@@ -11,7 +11,7 @@ jobs:
       env:
         - GCC_VERSION="11"
         - HUB="gcc:11"
-    - name: "GCC11"
+    - name: "GCC15"
       env:
         - GCC_VERSION="15"
         - HUB="gcc:15"
