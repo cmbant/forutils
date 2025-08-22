@@ -416,15 +416,6 @@
     integer, intent(in) :: fid
     integer i,k, sz
     class(*), pointer :: P(:)
-#if __GNUC__ == 6
-    logical, save :: warned = .false.
-
-    if (.not. warned) then
-        write(*,*) '** WARNING **: TObjectList_SaveBinary: ' &
-            // 'optimized gfortran 6 has bugs giving invalid saved binary data. Try 7.3.1+.'
-        warned = .true.
-    end if
-#endif
 
     write (fid) this%Count
     do i=1,this%Count

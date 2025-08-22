@@ -100,6 +100,7 @@
 
 
     Type, extends(TInterpolator) :: TInterpGrid2D
+        !      Akima's Method (not same as RectBivariateSpline)
         !      ALGORITHM 760, COLLECTED ALGORITHMS FROM ACM.
         !      THIS WORK PUBLISHED IN TRANSACTIONS ON MATHEMATICAL SOFTWARE,
         !      VOL. 22, NO. 3, September, 1996, P.  357--361.
@@ -541,8 +542,35 @@
         end if
     end if
 
-    llo=1
-    lhi=this%n
+    ! Optimized binary search with better initial guess
+    ! Use linear interpolation to estimate starting position
+    if (this%n > 2) then
+        ! Estimate position based on linear interpolation of x values
+        k = 1 + int((x - this%X(1)) / (this%X(this%n) - this%X(1)) * (this%n - 1))
+        k = max(1, min(this%n-1, k))  ! Clamp to valid range
+
+        ! Check if our guess is correct
+        if (x >= this%X(k) .and. x <= this%X(k+1)) then
+            llo = k
+            xlo = this%X(llo)
+            xhi = this%X(llo+1)
+            return
+        end if
+
+        ! Set binary search bounds based on our guess
+        if (x < this%X(k)) then
+            llo = 1
+            lhi = k
+        else
+            llo = k
+            lhi = this%n
+        end if
+    else
+        llo = 1
+        lhi = this%n
+    end if
+
+    ! Standard binary search within the narrowed range
     do while (lhi-llo > 1)
         k=(lhi+llo)/2
         if(this%X(k) > x)then
