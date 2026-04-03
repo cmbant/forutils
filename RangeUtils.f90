@@ -36,6 +36,7 @@
     procedure :: Init => TRanges_Free
     procedure :: Free => TRanges_Free
     procedure :: IndexOf => TRanges_IndexOf
+    procedure :: IndexOfOrdered => TRanges_IndexOfOrdered
     procedure :: Array => TRanges_Array
     procedure :: dArray => TRanges_dArray
     procedure :: GetArray => TRanges_GetArray
@@ -534,6 +535,70 @@
     end subroutine
 
     end subroutine TRanges_Add
+
+
+    subroutine TRanges_IndexOfOrdered(this, values, n, indices)
+    !Vectorized IndexOf for a monotonically ordered (ascending or descending) array.
+    !Sweeps through regions once: O(n + count) vs O(n*count) for repeated IndexOf calls.
+    class(TRanges), intent(in) :: this
+    integer, intent(in) :: n
+    double precision, intent(in) :: values(n)
+    integer, intent(out) :: indices(n)
+    integer :: j, reg
+    double precision :: tau
+
+    if (n == 0) return
+
+    if (n == 1 .or. values(n) >= values(1)) then
+        ! Ascending: sweep regions forward as values increase
+        reg = 1
+        do j = 1, n
+            tau = values(j)
+            if (tau >= this%Highest) then
+                indices(j) = this%npoints
+            else
+                do while (reg < this%count .and. tau >= this%R(reg)%High)
+                    reg = reg + 1
+                end do
+                if (tau < this%R(reg)%Low) then
+                    print *, "tau=", tau, ",this%Highest=", this%Highest
+                    call MpiStop('TRanges_IndexOfOrdered: value out of range')
+                end if
+                associate(AReg => this%R(reg))
+                    if (AReg%IsLog) then
+                        indices(j) = AReg%start_index + int(log(tau / AReg%Low) / AReg%delta)
+                    else
+                        indices(j) = AReg%start_index + int((tau - AReg%Low) / AReg%delta)
+                    end if
+                end associate
+            end if
+        end do
+    else
+        ! Descending: sweep regions backward as values decrease
+        reg = this%count
+        do j = 1, n
+            tau = values(j)
+            if (tau >= this%Highest) then
+                indices(j) = this%npoints
+            else
+                do while (reg > 1 .and. tau < this%R(reg)%Low)
+                    reg = reg - 1
+                end do
+                if (tau < this%R(reg)%Low) then
+                    print *, "tau=", tau, ",this%Highest=", this%Highest
+                    call MpiStop('TRanges_IndexOfOrdered: value out of range')
+                end if
+                associate(AReg => this%R(reg))
+                    if (AReg%IsLog) then
+                        indices(j) = AReg%start_index + int(log(tau / AReg%Low) / AReg%delta)
+                    else
+                        indices(j) = AReg%start_index + int((tau - AReg%Low) / AReg%delta)
+                    end if
+                end associate
+            end if
+        end do
+    end if
+    end subroutine TRanges_IndexOfOrdered
 
 
     subroutine TRanges_Write(this)
