@@ -538,66 +538,131 @@
 
 
     subroutine TRanges_IndexOfOrdered(this, values, n, indices)
-    !Vectorized IndexOf for a monotonically ordered (ascending or descending) array.
-    !Sweeps through regions once: O(n + count) vs O(n*count) for repeated IndexOf calls.
+    ! Vectorized IndexOf for a monotonically ordered array.
+    ! Processes contiguous runs within each region, so region fields and
+    ! IsLog are loaded/branched once per region rather than once per value.
+
     class(TRanges), intent(in) :: this
     integer, intent(in) :: n
     double precision, intent(in) :: values(n)
     integer, intent(out) :: indices(n)
-    integer :: j, reg
-    double precision :: tau
 
-    if (n == 0) return
+    integer :: j, reg, count, npoints, start_index
+    double precision :: tau, highest
+    double precision :: low, high, limit, inv_delta
+    logical :: is_log, ascending
 
-    if (n == 1 .or. values(n) >= values(1)) then
-        ! Ascending: sweep regions forward as values increase
+    if (n <= 0) return
+
+    count   = this%count
+    npoints = this%npoints
+    highest = this%Highest
+
+    ascending = (n == 1 .or. values(n) >= values(1))
+    j = 1
+
+    if (ascending) then
         reg = 1
-        do j = 1, n
+
+        do while (j <= n)
             tau = values(j)
-            if (tau >= this%Highest) then
-                indices(j) = this%npoints
+
+            ! Remaining values are also >= highest in the ascending case.
+            if (tau >= highest) then
+                indices(j:n) = npoints
+                exit
+            end if
+
+            do while (reg < count .and. tau >= this%R(reg)%High)
+                reg = reg + 1
+            end do
+
+            low = this%R(reg)%Low
+            if (tau < low) call range_error(tau, highest)
+
+            high        = this%R(reg)%High
+            start_index = this%R(reg)%start_index
+            inv_delta   = 1.0d0 / this%R(reg)%delta
+            is_log      = this%R(reg)%IsLog
+
+            ! values below this%Highest are indexed, values >= this%Highest
+            ! map to this%npoints.
+            if (reg < count) then
+                limit = high
             else
-                do while (reg < this%count .and. tau >= this%R(reg)%High)
-                    reg = reg + 1
+                limit = highest
+            end if
+
+            if (is_log) then
+                do while (j <= n)
+                    tau = values(j)
+                    if (tau >= limit) exit
+                    indices(j) = start_index + int(log(tau / low) * inv_delta)
+                    j = j + 1
                 end do
-                if (tau < this%R(reg)%Low) then
-                    print *, "tau=", tau, ",this%Highest=", this%Highest
-                    call MpiStop('TRanges_IndexOfOrdered: value out of range')
-                end if
-                associate(AReg => this%R(reg))
-                    if (AReg%IsLog) then
-                        indices(j) = AReg%start_index + int(log(tau / AReg%Low) / AReg%delta)
-                    else
-                        indices(j) = AReg%start_index + int((tau - AReg%Low) / AReg%delta)
-                    end if
-                end associate
+            else
+                do while (j <= n)
+                    tau = values(j)
+                    if (tau >= limit) exit
+                    indices(j) = start_index + int((tau - low) * inv_delta)
+                    j = j + 1
+                end do
             end if
         end do
+
     else
-        ! Descending: sweep regions backward as values decrease
-        reg = this%count
-        do j = 1, n
+        reg = count
+
+        do while (j <= n)
+
+            ! Leading values may be above the tabulated upper end.
+            ! In the descending case we cannot fill the whole tail.
+            do while (j <= n .and. values(j) >= highest)
+                indices(j) = npoints
+                j = j + 1
+            end do
+            if (j > n) exit
+
             tau = values(j)
-            if (tau >= this%Highest) then
-                indices(j) = this%npoints
-            else
-                do while (reg > 1 .and. tau < this%R(reg)%Low)
-                    reg = reg - 1
+
+            do while (reg > 1 .and. tau < this%R(reg)%Low)
+                reg = reg - 1
+            end do
+
+            low = this%R(reg)%Low
+            if (tau < low) call range_error(tau, highest)
+
+            start_index = this%R(reg)%start_index
+            inv_delta   = 1.0d0 / this%R(reg)%delta
+            is_log      = this%R(reg)%IsLog
+
+            if (is_log) then
+                do while (j <= n)
+                    tau = values(j)
+                    if (tau < low) exit
+                    indices(j) = start_index + int(log(tau / low) * inv_delta)
+                    j = j + 1
                 end do
-                if (tau < this%R(reg)%Low) then
-                    print *, "tau=", tau, ",this%Highest=", this%Highest
-                    call MpiStop('TRanges_IndexOfOrdered: value out of range')
-                end if
-                associate(AReg => this%R(reg))
-                    if (AReg%IsLog) then
-                        indices(j) = AReg%start_index + int(log(tau / AReg%Low) / AReg%delta)
-                    else
-                        indices(j) = AReg%start_index + int((tau - AReg%Low) / AReg%delta)
-                    end if
-                end associate
+            else
+                do while (j <= n)
+                    tau = values(j)
+                    if (tau < low) exit
+                    indices(j) = start_index + int((tau - low) * inv_delta)
+                    j = j + 1
+                end do
             end if
         end do
     end if
+
+    contains
+
+    subroutine range_error(tau, highest)
+    double precision, intent(in) :: tau, highest
+
+    print *, "tau=", tau, ",this%Highest=", highest
+    call MpiStop('TRanges_IndexOfOrdered: value out of range')
+    end subroutine range_error
+
     end subroutine TRanges_IndexOfOrdered
 
 
