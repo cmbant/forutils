@@ -61,6 +61,7 @@
     Type, extends(TSpline1D) :: TCubicSpline
         ! 1D cubic spline interpolator with irregular monotonic X spacing
         real(sp_acc), allocatable :: X(:)
+        real(sp_acc), private :: x_guess_factor = 0._sp_acc
     contains
     procedure, private, nopass :: spline
     procedure, private :: TCubicSpline_Init
@@ -80,13 +81,18 @@
     Type, extends(TSpline1D) :: TRegularCubicSpline
         ! 1D interpolation with regular X spacing
         real(sp_acc) :: xmin, xmax, delta_x
+        real(sp_acc), private :: inv_delta_x = 0._sp_acc, delta_x2_over6 = 0._sp_acc
     contains
     procedure, private, nopass :: regular_spline
     procedure :: Init => TRegularCubicSpline_Init
     procedure :: InitInterp => TRegularCubicSpline_InitInterp
+    procedure :: GetValue => TRegularCubicSpline_Value
+    procedure :: Derivative => TRegularCubicSpline_Derivative
     procedure :: FindNext => TRegularCubicSpline_FindNext
     procedure :: LoadState => TRegularCubicSpline_LoadState
     procedure :: SaveState => TRegularCubicSpline_SaveState
+    procedure, private :: TSpline1D_ArrayValue => TRegularCubicSpline_ArrayValue
+    procedure, private :: TSpline1D_IntRangeValue => TRegularCubicSpline_IntRangeValue
     end Type
 
 
@@ -123,7 +129,7 @@
     public TInterpolator1D, TSpline1D, TCubicSpline, TRegularCubicSpline, TInterpGrid2D, SPLINE_DANGLE
     public cubic_spline_second_derivs, cubic_spline_derivatives, cubic_spline_derivatives_from_second_derivs
     public cubic_spline_integral_array, cubic_spline_horner_coefficients
-    public cubic_spline_regular_horner_coefficients
+    public cubic_spline_regular_second_derivs, cubic_spline_regular_horner_coefficients
 
     contains
 
@@ -303,7 +309,8 @@
     a0=(xhi-x)/ho
     b0 = 1-a0
     dely=this%F(lhi)-this%F(llo)
-    TSpline1D_Derivative = dely/ho+ ((1-3*a0**2)*this%ddF(llo) + (3*b0**2-1)*this%ddF(lhi))*ho/6
+    TSpline1D_Derivative = dely/ho+ ((1._sp_acc-3._sp_acc*a0*a0)*this%ddF(llo) + &
+        (3._sp_acc*b0*b0-1._sp_acc)*this%ddF(lhi))*ho/6._sp_acc
 
     end function TSpline1D_Derivative
 
@@ -449,6 +456,7 @@
     this%Xend_tol_interp = (this%X(2)-this%X(1))*this%fraction_tol
     this%Xmin_interp = this%X(1)
     this%Xmax_interp = this%X(this%n)
+    this%x_guess_factor = (this%n - 1)/(this%Xmax_interp - this%Xmin_interp)
     this%Xmin_check = this%X(1) - this%Xend_tol_interp
     this%Xmax_check = this%X(this%n) + this%Xend_tol_interp
     allocate(this%ddF(this%n))
@@ -549,7 +557,7 @@
     ! Use linear interpolation to estimate starting position
     if (this%n > 2) then
         ! Estimate position based on linear interpolation of x values
-        k = 1 + int((x - this%X(1)) / (this%X(this%n) - this%X(1)) * (this%n - 1))
+        k = 1 + int((x - this%Xmin_interp) * this%x_guess_factor)
         k = max(1, min(this%n-1, k))  ! Clamp to valid range
 
         ! Check if our guess is correct
@@ -641,6 +649,8 @@
 
     call this%TSpline1D%InitInterp(End1,End2)
 
+    this%inv_delta_x = 1._sp_acc/this%delta_x
+    this%delta_x2_over6 = this%delta_x*this%delta_x/6._sp_acc
     this%Xend_tol_interp = this%delta_x*this%fraction_tol
     this%xmin_check = this%xmin_interp - this%Xend_tol_interp
     this%xmax_check = this%xmax_interp + this%Xend_tol_interp
@@ -650,6 +660,136 @@
 
     end subroutine TRegularCubicSpline_InitInterp
 
+    function TRegularCubicSpline_Value(this, x, error )
+    class(TRegularCubicSpline) :: this
+    real(sp_acc) :: TRegularCubicSpline_Value
+    real(sp_acc), intent(in) :: x
+    integer, intent(inout), optional :: error !initialize to zero outside, changed if bad
+    integer llo,lhi
+    real(sp_acc) a0,b0,xlo
+
+    if (.not. this%Initialized) call this%FirstUse
+
+    if (x< this%Xmin_check .or. x> this%Xmax_check) then
+        TRegularCubicSpline_Value = 0._sp_acc
+        if (present(error)) then
+            error = -1
+            return
+        else
+            call this%Error('Spline x = %f out of range',x)
+        end if
+    end if
+
+    llo = min(max(0,int((x - this%xmin_interp)*this%inv_delta_x)), this%n-2)
+    xlo = this%xmin_interp + llo*this%delta_x
+    llo = llo+1
+    lhi = llo+1
+    b0 = (x - xlo)*this%inv_delta_x
+    a0 = 1._sp_acc-b0
+    TRegularCubicSpline_Value = b0*this%F(lhi)+a0*(this%F(llo) - &
+        b0*((a0+1._sp_acc)*this%ddF(llo) +(2._sp_acc-a0)*this%ddF(lhi))*this%delta_x2_over6)
+
+    end function TRegularCubicSpline_Value
+
+    function TRegularCubicSpline_Derivative(this, x, error )
+    class(TRegularCubicSpline) :: this
+    real(sp_acc) :: TRegularCubicSpline_Derivative
+    real(sp_acc), intent(in) :: x
+    integer, intent(inout), optional :: error !initialize to zero outside, changed if bad
+    integer llo,lhi
+    real(sp_acc) a0,b0,dely,xlo
+
+    if (.not. this%Initialized) call this%FirstUse
+
+    if (x< this%Xmin_check .or. x> this%Xmax_check) then
+        TRegularCubicSpline_Derivative = 0._sp_acc
+        if (present(error)) then
+            error = -1
+            return
+        else
+            call this%Error('Spline x = %f out of range',x)
+        end if
+    end if
+
+    llo = min(max(0,int((x - this%xmin_interp)*this%inv_delta_x)), this%n-2)
+    xlo = this%xmin_interp + llo*this%delta_x
+    llo = llo+1
+    lhi = llo+1
+    b0 = (x - xlo)*this%inv_delta_x
+    a0 = 1._sp_acc-b0
+    dely=this%F(lhi)-this%F(llo)
+    TRegularCubicSpline_Derivative = dely*this%inv_delta_x + &
+        ((1._sp_acc-3._sp_acc*a0*a0)*this%ddF(llo) + &
+        (3._sp_acc*b0*b0-1._sp_acc)*this%ddF(lhi))*this%delta_x/6._sp_acc
+
+    end function TRegularCubicSpline_Derivative
+
+    subroutine TRegularCubicSpline_ArrayValue(this, x, y, error )
+    !Get array of values y(x), assuming x is monotonically increasing
+    class(TRegularCubicSpline) :: this
+    real(sp_acc), intent(in) :: x(1:)
+    real(sp_acc), intent(out) :: y(1:)
+    integer, intent(inout), optional :: error !initialize to zero outside, changed if bad
+    integer llo,lhi, i
+    real(sp_acc) a0,b0,xlo
+
+    if (.not. this%Initialized) call this%FirstUse
+
+    if (x(1)< this%Xmin_check .or. x(size(x))> this%Xmax_check) then
+        if (present(error)) then
+            error = -1
+            return
+        else
+            call this%Error('Spline ArrayValue: out of range')
+        end if
+    end if
+
+    do i=1, size(x)
+        llo = min(max(0,int((x(i) - this%xmin_interp)*this%inv_delta_x)), this%n-2)
+        xlo = this%xmin_interp + llo*this%delta_x
+        llo = llo+1
+        lhi = llo+1
+        b0 = (x(i) - xlo)*this%inv_delta_x
+        a0 = 1._sp_acc-b0
+        y(i) = b0*this%F(lhi)+a0*(this%F(llo) - &
+            b0*((a0+1._sp_acc)*this%ddF(llo) +(2._sp_acc-a0)*this%ddF(lhi))*this%delta_x2_over6)
+    end do
+
+    end subroutine TRegularCubicSpline_ArrayValue
+
+    subroutine TRegularCubicSpline_IntRangeValue(this, xmin, xmax, y, error )
+    !Get array of values y(x), assuming x is monotonically increasing
+    class(TRegularCubicSpline) :: this
+    integer, intent(in) :: xmin, xmax
+    real(sp_acc), intent(out) :: y(xmin:)
+    integer, intent(inout), optional :: error !initialize to zero outside, changed if bad
+    integer llo,lhi, x
+    real(sp_acc) a0,b0,xreal,xlo
+
+    if (.not. this%Initialized) call this%FirstUse
+
+    if (xmin< this%Xmin_check .or. xmax> this%Xmax_check ) then
+        if (present(error)) then
+            error = -1
+            return
+        else
+            call this%Error('Array spline: limits out of range ')
+        end if
+    end if
+
+    do x=xmin, xmax
+        xreal = real(x,sp_acc)
+        llo = min(max(0,int((xreal - this%xmin_interp)*this%inv_delta_x)), this%n-2)
+        xlo = this%xmin_interp + llo*this%delta_x
+        llo = llo+1
+        lhi = llo+1
+        b0 = (xreal - xlo)*this%inv_delta_x
+        a0 = 1._sp_acc-b0
+        y(x) = b0*this%F(lhi)+a0*(this%F(llo) - &
+            b0*((a0+1._sp_acc)*this%ddF(llo) +(2._sp_acc-a0)*this%ddF(lhi))*this%delta_x2_over6)
+    end do
+
+    end subroutine TRegularCubicSpline_IntRangeValue
 
     subroutine TRegularCubicSpline_FindNext(this, x, llo, xlo, xhi)
     class(TRegularCubicSpline) :: this
@@ -657,7 +797,7 @@
     integer, intent(inout) :: llo
     real(sp_acc), intent(out) :: xlo, xhi
 
-    llo = min(max(0,int((x - this%xmin_interp)/this%delta_x)), this%n-2)
+    llo = min(max(0,int((x - this%xmin_interp)*this%inv_delta_x)), this%n-2)
     xlo = this%xmin_interp + llo*this%delta_x
     llo = llo+1
     xhi = xlo + this%delta_x
@@ -713,7 +853,7 @@
     real(sp_acc), intent(in) :: x
     integer, intent(inout), optional :: error !initialize to zero outside, changed if bad
 
-    TLogRegularCubicSpline_Value = TSpline1D_Value(this, log(x), error)
+    TLogRegularCubicSpline_Value = TRegularCubicSpline_Value(this, log(x), error)
 
     end function TLogRegularCubicSpline_Value
 
@@ -723,7 +863,7 @@
     real(sp_acc), intent(in) :: x
     integer, intent(inout), optional :: error !initialize to zero outside, changed if bad
 
-    TLogRegularCubicSpline_Derivative = TSpline1D_Derivative(this, log(x), error)/x
+    TLogRegularCubicSpline_Derivative = TRegularCubicSpline_Derivative(this, log(x), error)/x
 
     end function TLogRegularCubicSpline_Derivative
 
@@ -852,6 +992,18 @@
 
     end subroutine cubic_spline_horner_coefficients
 
+    subroutine cubic_spline_regular_second_derivs(delta,y,n,d2,End1,End2)
+    !Second derivatives for a regular-grid cubic spline; delta is x(i+1)-x(i).
+    integer, intent(in) :: n
+    real(sp_acc), intent(in) :: delta, y(n)
+    real(sp_acc), intent(out) :: d2(n)
+    real(sp_acc), intent(in), optional :: End1, End2
+
+    call regular_spline(delta,y,n,PresentDefault(SPLINE_DANGLE, End1), &
+        PresentDefault(SPLINE_DANGLE, End2),d2)
+
+    end subroutine cubic_spline_regular_second_derivs
+
     subroutine cubic_spline_regular_horner_coefficients(delta,y,d2,horner,n)
     !Interval polynomial coefficients for a regular-grid cubic spline in normalized Horner form.
     integer, intent(in) :: n
@@ -876,26 +1028,27 @@
     real(sp_acc), intent(in) :: delta, y(n), d11, d1n
     real(sp_acc), intent(out) :: d2(n)
     integer i
-    real(sp_acc) xp,qn,un,d1l,d1r
-    real(sp_acc), allocatable :: u(:)
+    real(sp_acc) xp,qn,un,d1l,d1r,inv_delta,three_inv_delta
+    real(sp_acc) u(n-1)
 
-    allocate(u(n-1))
+    inv_delta = 1._sp_acc/delta
+    three_inv_delta = 3._sp_acc*inv_delta
 
-    d1r= (y(2)-y(1))/delta
+    d1r= (y(2)-y(1))*inv_delta
     if (d11==SPLINE_DANGLE) then
         d2(1)=0._sp_acc
         u(1)=0._sp_acc
     else
         d2(1)=-0.5_sp_acc
-        u(1)=(3._sp_acc/delta)*(d1r-d11)
+        u(1)=three_inv_delta*(d1r-d11)
     endif
 
     do i=2,n-1
         d1l=d1r
-        d1r=(y(i+1)-y(i))/delta
-        xp=1/(d2(i-1)/2+2._sp_acc)
-        d2(i)=-xp/2
-        u(i)=(3*(d1r-d1l)/delta  -u(i-1)/2)*xp
+        d1r=(y(i+1)-y(i))*inv_delta
+        xp=1._sp_acc/(0.5_sp_acc*d2(i-1)+2._sp_acc)
+        d2(i)=-0.5_sp_acc*xp
+        u(i)=(three_inv_delta*(d1r-d1l) -0.5_sp_acc*u(i-1))*xp
     end do
     d1l=d1r
 
@@ -904,7 +1057,7 @@
         un=0._sp_acc
     else
         qn=0.5_sp_acc
-        un=(3._sp_acc/delta)*(d1n-d1l)
+        un=three_inv_delta*(d1n-d1l)
     endif
 
     d2(n)=(un-qn*u(n-1))/(qn*d2(n-1)+1._sp_acc)
@@ -917,7 +1070,18 @@
 
     subroutine TInterpGrid2D_InitInterp(this)
     class(TInterpGrid2D):: this
+    integer ix, iy
 
+    if (this%nx <= 1) call this%Error('TInterpGrid2D_InitInterp needs at least two x points')
+    if (this%ny <= 1) call this%Error('TInterpGrid2D_InitInterp needs at least two y points')
+    do ix = 2, this%nx
+        if (this%x(ix) <= this%x(ix-1)) call this%Error('TInterpGrid2D_InitInterp x values out of sequence')
+    end do
+    do iy = 2, this%ny
+        if (this%y(iy) <= this%y(iy-1)) call this%Error('TInterpGrid2D_InitInterp y values out of sequence')
+    end do
+
+    if (allocated(this%Wk)) deallocate(this%Wk)
     allocate(this%Wk(3,this%NX,this%NY))
     CALL rgpd3p(this%nx, this%ny, this%x, this%y, this%z, this%wk)
     this%Initialized = .true.
@@ -1054,12 +1218,10 @@
     subroutine TInterpGrid2D_Clear(this)
     class(TInterpGrid2D):: this
 
-    if (allocated(this%Wk)) then
-        deallocate(this%x)
-        deallocate(this%y)
-        deallocate(this%Wk)
-        deallocate(this%z)
-    end if
+    if (allocated(this%x)) deallocate(this%x)
+    if (allocated(this%y)) deallocate(this%y)
+    if (allocated(this%Wk)) deallocate(this%Wk)
+    if (allocated(this%z)) deallocate(this%z)
     this%Initialized = .false.
 
     end subroutine TInterpGrid2D_Clear
@@ -1085,12 +1247,23 @@
     real(GI), intent(out):: z(nip)
     real(GI), intent(in) :: x(nip),y(nip)
     integer, intent(inout), optional :: error
-    integer md,ier
+    integer, parameter :: nipimx=51
+    integer iip, nipi, ier
+    integer inxi(nipimx), inyi(nipimx)
 
-    md=2
     if (.not. this%Initialized)  call this%FirstUse
 
-    call rgbi3p(this%Wk,md, this%nx, this%ny, this%x, this%y, this%z, nip, x, y, z, ier)
+    if (nip <= 0) then
+        ier = 5
+    else
+        ier = 0
+        do iip = 1, nip, nipimx
+            nipi = min(nip-(iip-1),nipimx)
+            call rglctn(this%nx, this%ny, this%x, this%y, nipi, x(iip), y(iip), inxi, inyi)
+            call rgplnl(this%nx, this%ny, this%x, this%y, this%z, this%Wk, nipi, &
+                x(iip), y(iip), inxi, inyi, z(iip))
+        end do
+    end if
     if (present(error)) then
         error=ier
     elseif (ier/=0) then
