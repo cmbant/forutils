@@ -102,6 +102,8 @@
     procedure :: Init => TLogRegularCubicSpline_Init
     procedure :: Derivative => TLogRegularCubicSpline_Derivative
     procedure :: GetValue => TLogRegularCubicSpline_Value
+    procedure, private :: TSpline1D_ArrayValue => TLogRegularCubicSpline_ArrayValue
+    procedure, private :: TSpline1D_IntRangeValue => TLogRegularCubicSpline_IntRangeValue
     end Type
 
 
@@ -867,6 +869,53 @@
 
     end function TLogRegularCubicSpline_Derivative
 
+    subroutine TLogRegularCubicSpline_ArrayValue(this, x, y, error )
+    !Get array values for inputs in the original, not log, coordinate.
+    class(TLogRegularCubicSpline) :: this
+    real(sp_acc), intent(in) :: x(1:)
+    real(sp_acc), intent(out) :: y(1:)
+    integer, intent(inout), optional :: error !initialize to zero outside, changed if bad
+    real(sp_acc), allocatable :: logx(:)
+
+    if (any(x <= 0._sp_acc)) then
+        if (present(error)) then
+            error = -1
+            return
+        else
+            call this%Error('Log spline ArrayValue: x <= 0')
+        end if
+    end if
+    allocate(logx(size(x)))
+    logx = log(x)
+    call TRegularCubicSpline_ArrayValue(this, logx, y, error)
+
+    end subroutine TLogRegularCubicSpline_ArrayValue
+
+    subroutine TLogRegularCubicSpline_IntRangeValue(this, xmin, xmax, y, error )
+    !Get integer-range values for a log-regular spline using original x coordinates.
+    class(TLogRegularCubicSpline) :: this
+    integer, intent(in) :: xmin, xmax
+    real(sp_acc), intent(out) :: y(xmin:)
+    integer, intent(inout), optional :: error !initialize to zero outside, changed if bad
+    integer x
+
+    if (xmin <= 0) then
+        if (present(error)) then
+            error = -1
+            return
+        else
+            call this%Error('Log spline IntRangeValue: xmin <= 0')
+        end if
+    end if
+    do x=xmin, xmax
+        y(x) = TRegularCubicSpline_Value(this, log(real(x,sp_acc)), error)
+        if (present(error)) then
+            if (error /= 0) return
+        end if
+    end do
+
+    end subroutine TLogRegularCubicSpline_IntRangeValue
+
 
     !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
     ! calculates array of second derivatives used by cubic spline
@@ -1372,73 +1421,58 @@
     !     .. Local Arrays ..
     INTEGER  :: inxi(nipimx), inyi(nipimx)
 
-    !     ..
-    !     .. External Subroutines ..
-    ! EXTERNAL         rglctn, rgpd3p, rgplnl
-    !     ..
-    !     .. Intrinsic Functions ..
-    ! INTRINSIC        MIN
-    !     ..
-
-    ! Preliminary processing
-    ! Error check
-    IF (nxd <= 1) GO TO 40
-    IF (nyd <= 1) GO TO 50
-    DO  ix = 2,nxd
-        IF (xd(ix) <= xd(ix-1)) GO TO 60
-    END DO
-    DO  iy = 2,nyd
-        IF (yd(iy) <= yd(iy-1)) GO TO 70
-    END DO
-    IF (nip <= 0) GO TO 80
     ier = 0
+    if (nxd <= 1) then
+        write (*, *) "RGBI3P error 1: NXD = 1 or less"
+        ier = 1
+    else if (nyd <= 1) then
+        write (*, *) "RGBI3P error 2: NYD = 1 or less"
+        ier = 2
+    else
+        do ix = 2, nxd
+            if (xd(ix) <= xd(ix-1)) then
+                write (*, *) "RGBI3P error 3: identical XD values or XD values out of sequence"
+                write (*, *) "IX =", ix, "XD(IX) =", xd(ix)
+                ier = 3
+                exit
+            end if
+        end do
+        if (ier == 0) then
+            do iy = 2, nyd
+                if (yd(iy) <= yd(iy-1)) then
+                    write (*, *) "RGBI3P error 4: identical YD values or YD values out of sequence"
+                    write (*, *) "IY =", iy, "YD(IY) =", yd(iy)
+                    ier = 4
+                    exit
+                end if
+            end do
+        end if
+        if (ier == 0 .and. nip <= 0) then
+            write (*, *) "RGBI3P error 5: NIP = 0 or less"
+            ier = 5
+        end if
+    end if
+
+    if (ier /= 0) then
+        write (*, *) "NXD =", nxd, "NYD =", nyd, "NIP =", nip
+        return
+    end if
 
     ! Calculation
     ! Estimates partial derivatives at all input-grid data points (for MD=1).
-    IF (md /= 2) THEN
-        CALL rgpd3p(nxd, nyd, xd, yd, zd, wk)
-    END IF
+    if (md /= 2) call rgpd3p(nxd, nyd, xd, yd, zd, wk)
 
     ! DO-loop with respect to the output point
     ! Processes NIPIMX output points, at most, at a time.
-    DO  iip = 1,nip,nipimx
-        nipi = MIN(nip- (iip-1),nipimx)
+    do iip = 1, nip, nipimx
+        nipi = min(nip - (iip - 1), nipimx)
         ! Locates the output points.
-        CALL rglctn(nxd, nyd, xd, yd, nipi, xi(iip), yi(iip), inxi, inyi)
+        call rglctn(nxd, nyd, xd, yd, nipi, xi(iip), yi(iip), inxi, inyi)
 
         ! Calculates the z values at the output points.
-        CALL rgplnl(nxd, nyd, xd, yd, zd, wk, nipi, xi(iip), yi(iip), inxi, inyi, &
+        call rgplnl(nxd, nyd, xd, yd, zd, wk, nipi, xi(iip), yi(iip), inxi, inyi, &
             zi(iip))
-    END DO
-    RETURN
-
-    ! Error exit
-40  WRITE (*,FMT=9000)
-    ier = 1
-    GO TO 90
-50  WRITE (*,FMT=9010)
-    ier = 2
-    GO TO 90
-60  WRITE (*,FMT=9020) ix,xd(ix)
-    ier = 3
-    GO TO 90
-70  WRITE (*,FMT=9030) iy,yd(iy)
-    ier = 4
-    GO TO 90
-80  WRITE (*,FMT=9040)
-    ier = 5
-90  WRITE (*,FMT=9050) nxd,nyd,nip
-    RETURN
-
-    ! Format statements for error messages
-9000 FORMAT (/' *** RGBI3P Error 1: NXD = 1 or less')
-9010 FORMAT (/' *** RGBI3P Error 2: NYD = 1 or less')
-9020 FORMAT (/' *** RGBI3P Error 3: Identical XD values or',  &
-        ' XD values out of sequence'/ '    IX =', i6, ',  XD(IX) =', e11.3)
-9030 FORMAT (/' *** RGBI3P Error 4: Identical YD values or',  &
-        ' YD values out of sequence',/,'    IY =',i6,',  YD(IY) =', e11.3)
-9040 FORMAT (/' *** RGBI3P Error 5: NIP = 0 or less')
-9050 FORMAT ('    NXD =', i5,',  NYD =', i5,',  NIP =', i5/)
+    end do
     END SUBROUTINE rgbi3p
 
 
@@ -1528,12 +1562,12 @@
     INTEGER, INTENT(IN)   :: nyd
     REAL(GI), INTENT(IN)      :: xd(nxd)
     REAL(GI), INTENT(IN)      :: yd(nyd)
-    REAL(GI), INTENT(IN OUT)  :: zd(nxd,nyd)
+    REAL(GI), INTENT(IN)      :: zd(nxd,nyd)
     INTEGER, INTENT(IN)   :: nxi
-    REAL(GI), INTENT(IN OUT)  :: xi(nxi)
+    REAL(GI), INTENT(IN)      :: xi(nxi)
     INTEGER, INTENT(IN)   :: nyi
     REAL(GI), INTENT(IN)      :: yi(nyi)
-    REAL(GI), INTENT(IN OUT)  :: zi(nxi,nyi)
+    REAL(GI), INTENT(OUT)     :: zi(nxi,nyi)
     INTEGER, INTENT(OUT)  :: ier
     REAL(GI), INTENT(INOUT)  :: wk(3,nxd,nyd)
 
@@ -1547,86 +1581,69 @@
     REAL(GI)     :: yii(nipimx)
     INTEGER  :: inxi(nipimx), inyi(nipimx)
 
-    !     ..
-    !     .. External Subroutines ..
-    ! EXTERNAL         rglctn,rgpd3p,rgplnl
-    !     ..
-    !     .. Intrinsic Functions ..
-    ! INTRINSIC        MIN
-    !     ..
-
-    ! Preliminary processing
-    ! Error check
-    IF (nxd <= 1) GO TO 60
-    IF (nyd <= 1) GO TO 70
-    DO  ix = 2,nxd
-        IF (xd(ix) <= xd(ix-1)) GO TO 80
-    END DO
-    DO  iy = 2,nyd
-        IF (yd(iy) <= yd(iy-1)) GO TO 90
-    END DO
-    IF (nxi <= 0) GO TO 100
-    IF (nyi <= 0) GO TO 110
     ier = 0
+    if (nxd <= 1) then
+        write (*, *) "RGSF3P error 1: NXD = 1 or less"
+        ier = 1
+    else if (nyd <= 1) then
+        write (*, *) "RGSF3P error 2: NYD = 1 or less"
+        ier = 2
+    else
+        do ix = 2, nxd
+            if (xd(ix) <= xd(ix-1)) then
+                write (*, *) "RGSF3P error 3: identical XD values or XD values out of sequence"
+                write (*, *) "IX =", ix, "XD(IX) =", xd(ix)
+                ier = 3
+                exit
+            end if
+        end do
+        if (ier == 0) then
+            do iy = 2, nyd
+                if (yd(iy) <= yd(iy-1)) then
+                    write (*, *) "RGSF3P error 4: identical YD values or YD values out of sequence"
+                    write (*, *) "IY =", iy, "YD(IY) =", yd(iy)
+                    ier = 4
+                    exit
+                end if
+            end do
+        end if
+        if (ier == 0 .and. nxi <= 0) then
+            write (*, *) "RGSF3P error 5: NXI = 0 or less"
+            ier = 5
+        else if (ier == 0 .and. nyi <= 0) then
+            write (*, *) "RGSF3P error 6: NYI = 0 or less"
+            ier = 6
+        end if
+    end if
+
+    if (ier /= 0) then
+        write (*, *) "NXD =", nxd, "NYD =", nyd, "NXI =", nxi, "NYI =", nyi
+        return
+    end if
 
     ! Calculation
     ! Estimates partial derivatives at all input-grid data points
     ! (for MD=1).
-    IF (md /= 2) THEN
-        CALL rgpd3p(nxd, nyd, xd, yd, zd, wk)
-    END IF
+    if (md /= 2) call rgpd3p(nxd, nyd, xd, yd, zd, wk)
 
     ! Outermost DO-loop with respect to the y coordinate of the output grid points
-    DO  iyi = 1,nyi
-        DO  ixi = 1,nipimx
+    do iyi = 1, nyi
+        do ixi = 1, nipimx
             yii(ixi) = yi(iyi)
-        END DO
+        end do
 
         ! Second DO-loop with respect to the x coordinate of the output grid points
         ! Processes NIPIMX output-grid points, at most, at a time.
-        DO  ixi = 1,nxi,nipimx
-            nipi = MIN(nxi- (ixi-1), nipimx)
+        do ixi = 1, nxi, nipimx
+            nipi = min(nxi - (ixi - 1), nipimx)
             ! Locates the output-grid points.
-            CALL rglctn(nxd, nyd, xd, yd, nipi, xi(ixi), yii, inxi, inyi)
+            call rglctn(nxd, nyd, xd, yd, nipi, xi(ixi), yii, inxi, inyi)
 
             ! Calculates the z values at the output-grid points.
-            CALL rgplnl(nxd, nyd, xd, yd, zd, wk, nipi, xi(ixi), yii, inxi, inyi,  &
+            call rgplnl(nxd, nyd, xd, yd, zd, wk, nipi, xi(ixi), yii, inxi, inyi,  &
                 zi(ixi,iyi))
-        END DO
-    END DO
-    RETURN
-
-    ! Error exit
-60  WRITE (*,FMT=9000)
-    ier = 1
-    GO TO 120
-70  WRITE (*,FMT=9010)
-    ier = 2
-    GO TO 120
-80  WRITE (*,FMT=9020) ix,xd(ix)
-    ier = 3
-    GO TO 120
-90  WRITE (*,FMT=9030) iy,yd(iy)
-    ier = 4
-    GO TO 120
-100 WRITE (*,FMT=9040)
-    ier = 5
-    GO TO 120
-110 WRITE (*,FMT=9050)
-    ier = 6
-120 WRITE (*,FMT=9060) nxd,nyd,nxi,nyi
-    RETURN
-
-    ! Format statements for error messages
-9000 FORMAT (/' *** RGSF3P Error 1: NXD = 1 or less')
-9010 FORMAT (/' *** RGSF3P Error 2: NYD = 1 or less')
-9020 FORMAT (/' *** RGSF3P Error 3: Identical XD values or',  &
-        ' XD values out of sequence',/,'    IX =',i6,',  XD(IX) =', e11.3)
-9030 FORMAT (/' *** RGSF3P Error 4: Identical YD values or',  &
-        ' YD values out of sequence',/,'    IY =',i6,',  YD(IY) =', e11.3)
-9040 FORMAT (/' *** RGSF3P Error 5: NXI = 0 or less')
-9050 FORMAT (/' *** RGSF3P Error 6: NYI = 0 or less')
-9060 FORMAT ('    NXD =', i5, ',  NYD =', i5, ',  NXI =', i5,',  NYI =', i5 /)
+        end do
+    end do
     END SUBROUTINE rgsf3p
 
 
@@ -2187,7 +2204,8 @@
     !     ..
     !     .. Local Scalars ..
     REAL(GI)     :: xii, yii
-    INTEGER  :: iip, imd, imn, imx, ixd, iyd, nintx, ninty
+    INTEGER  :: iip, imd, imn, imx, ixd, iyd
+    LOGICAL :: new_interval_x, new_interval_y
 
     !     ..
     ! DO-loop with respect to IIP, which is the point number of the output point
@@ -2197,35 +2215,35 @@
         ! Checks if the x coordinate of the IIPth output point, XII, is
         ! in a new interval.  (NINTX is the new-interval flag.)
         IF (iip == 1) THEN
-            nintx = 1
+            new_interval_x = .true.
         ELSE
-            nintx = 0
+            new_interval_x = .false.
             IF (ixd == 0) THEN
-                IF (xii > xd(1)) nintx = 1
+                IF (xii > xd(1)) new_interval_x = .true.
             ELSE IF (ixd < nxd) THEN
-                IF ((xii < xd(ixd)) .OR. (xii > xd(ixd+1))) nintx = 1
+                IF ((xii < xd(ixd)) .OR. (xii > xd(ixd+1))) new_interval_x = .true.
             ELSE
-                IF (xii < xd(nxd)) nintx = 1
+                IF (xii < xd(nxd)) new_interval_x = .true.
             END IF
         END IF
 
         ! Locates the output point by binary search if XII is in a new interval.
         ! Determines IXD for which XII lies between XD(IXD) and XD(IXD+1).
-        IF (nintx == 1) THEN
+        IF (new_interval_x) THEN
             IF (xii <= xd(1)) THEN
                 ixd = 0
             ELSE IF (xii < xd(nxd)) THEN
                 imn = 1
                 imx = nxd
-                imd = (imn+imx)/2
-10              IF (xii >= xd(imd)) THEN
-                    imn = imd
-                ELSE
-                    imx = imd
-                END IF
-                imd = (imn+imx)/2
-                IF (imd > imn) GO TO 10
-                ixd = imd
+                DO WHILE (imx - imn > 1)
+                    imd = (imn + imx)/2
+                    IF (xii >= xd(imd)) THEN
+                        imn = imd
+                    ELSE
+                        imx = imd
+                    END IF
+                END DO
+                ixd = imn
             ELSE
                 ixd = nxd
             END IF
@@ -2235,35 +2253,35 @@
         ! Checks if the y coordinate of the IIPth output point, YII, is
         ! in a new interval.  (NINTY is the new-interval flag.)
         IF (iip == 1) THEN
-            ninty = 1
+            new_interval_y = .true.
         ELSE
-            ninty = 0
+            new_interval_y = .false.
             IF (iyd == 0) THEN
-                IF (yii > yd(1)) ninty = 1
+                IF (yii > yd(1)) new_interval_y = .true.
             ELSE IF (iyd < nyd) THEN
-                IF ((yii < yd(iyd)) .OR. (yii > yd(iyd+1))) ninty = 1
+                IF ((yii < yd(iyd)) .OR. (yii > yd(iyd+1))) new_interval_y = .true.
             ELSE
-                IF (yii < yd(nyd)) ninty = 1
+                IF (yii < yd(nyd)) new_interval_y = .true.
             END IF
         END IF
 
         ! Locates the output point by binary search if YII is in a new interval.
         ! Determines IYD for which YII lies between YD(IYD) and YD(IYD+1).
-        IF (ninty == 1) THEN
+        IF (new_interval_y) THEN
             IF (yii <= yd(1)) THEN
                 iyd = 0
             ELSE IF (yii < yd(nyd)) THEN
                 imn = 1
                 imx = nyd
-                imd = (imn+imx)/2
-20              IF (yii >= yd(imd)) THEN
-                    imn = imd
-                ELSE
-                    imx = imd
-                END IF
-                imd = (imn+imx)/2
-                IF (imd > imn) GO TO 20
-                iyd = imd
+                DO WHILE (imx - imn > 1)
+                    imd = (imn + imx)/2
+                    IF (yii >= yd(imd)) THEN
+                        imn = imd
+                    ELSE
+                        imx = imd
+                    END IF
+                END DO
+                iyd = imn
             ELSE
                 iyd = nyd
             END IF
