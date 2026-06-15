@@ -121,6 +121,8 @@
 
 
     public TInterpolator1D, TSpline1D, TCubicSpline, TRegularCubicSpline, TInterpGrid2D, SPLINE_DANGLE
+    public cubic_spline_second_derivs, cubic_spline_derivatives, cubic_spline_derivatives_from_second_derivs
+    public cubic_spline_integral_array, cubic_spline_unit_grid_integral, cubic_spline_horner_coefficients
 
     contains
 
@@ -773,6 +775,97 @@
         d2(i)=d2(i)*d2(i+1)+u(i)
     end do
     end subroutine spline
+
+    subroutine cubic_spline_second_derivs(x,y,n,d2,End1,End2)
+    !Second derivatives for a cubic spline; omitted endpoints use natural boundary conditions.
+    integer, intent(in) :: n
+    real(sp_acc), intent(in) :: x(n), y(n)
+    real(sp_acc), intent(out) :: d2(n)
+    real(sp_acc), intent(in), optional :: End1, End2
+
+    call spline(x,y,n,PresentDefault(SPLINE_DANGLE, End1),PresentDefault(SPLINE_DANGLE, End2),d2)
+
+    end subroutine cubic_spline_second_derivs
+
+    subroutine cubic_spline_derivatives(x,y,n,d2,dy,End1,End2)
+    !Build a cubic spline and return both second derivatives and first derivatives at knots.
+    integer, intent(in) :: n
+    real(sp_acc), intent(in) :: x(n), y(n)
+    real(sp_acc), intent(out) :: d2(n), dy(n)
+    real(sp_acc), intent(in), optional :: End1, End2
+
+    call cubic_spline_second_derivs(x,y,n,d2,End1,End2)
+    call cubic_spline_derivatives_from_second_derivs(x,y,d2,dy,n)
+
+    end subroutine cubic_spline_derivatives
+
+    subroutine cubic_spline_derivatives_from_second_derivs(x,y,d2,dy,n)
+    !First derivatives at knots for an existing cubic spline second-derivative table.
+    integer, intent(in) :: n
+    real(sp_acc), intent(in) :: x(n), y(n), d2(n)
+    real(sp_acc), intent(out) :: dy(n)
+    integer i
+    real(sp_acc) dx
+
+    do i=1, n-1
+        dx = x(i+1) - x(i)
+        dy(i) = (y(i+1) - y(i))/dx - dx*(2*d2(i) + d2(i+1))/6
+    end do
+    dx = x(n) - x(n-1)
+    dy(n) = (y(n) - y(n-1))/dx + dx*(d2(n-1) + 2*d2(n))/6
+
+    end subroutine cubic_spline_derivatives_from_second_derivs
+
+    subroutine cubic_spline_integral_array(x,y,d2,yint,n)
+    !Cumulative integral of a cubic spline at the input knots.
+    integer, intent(in) :: n
+    real(sp_acc), intent(in) :: x(n), y(n), d2(n)
+    real(sp_acc), intent(out) :: yint(n)
+    real(sp_acc) dx
+    integer i
+
+    yint(1) = 0
+    do i=2, n
+        dx = x(i) - x(i-1)
+        yint(i) = yint(i-1) + dx*((y(i)+y(i-1))/2 - dx**2/24*(d2(i)+d2(i-1)))
+    end do
+
+    end subroutine cubic_spline_integral_array
+
+    subroutine cubic_spline_unit_grid_integral(y,z,n)
+    !Integral of a cubic spline over a unit-spaced grid.
+    integer, intent(in) :: n
+    real(sp_acc), intent(in) :: y(n)
+    real(sp_acc), intent(out) :: z
+    integer :: n1
+    real(sp_acc) :: dy1, dyn
+
+    n1=n-1
+    dy1=0._sp_acc
+    dyn=(11._sp_acc*y(n)-18._sp_acc*y(n1)+9._sp_acc*y(n-2)-2._sp_acc*y(n-3))/6._sp_acc
+    z=0.5_sp_acc*(y(1)+y(n))+(dy1-dyn)/12._sp_acc
+    z= z + sum(y(2:n1))
+
+    end subroutine cubic_spline_unit_grid_integral
+
+    subroutine cubic_spline_horner_coefficients(x,y,d2,horner,n)
+    !Interval polynomial coefficients for cubic spline evaluation in normalized Horner form.
+    integer, intent(in) :: n
+    real(sp_acc), intent(in) :: x(n), y(n), d2(n)
+    real(sp_acc), intent(out) :: horner(:, :)
+    integer :: i
+    real(sp_acc) :: h2over6, three_h2over6
+
+    do i = 1, n - 1
+        h2over6 = (x(i+1) - x(i))**2/6._sp_acc
+        three_h2over6 = 3._sp_acc*h2over6
+        horner(1, i) = y(i)
+        horner(2, i) = y(i + 1) - y(i) - h2over6*(2._sp_acc*d2(i) + d2(i + 1))
+        horner(3, i) = three_h2over6*d2(i)
+        horner(4, i) = h2over6*(d2(i + 1) - d2(i))
+    end do
+
+    end subroutine cubic_spline_horner_coefficients
 
     subroutine regular_spline(delta,y,n,d11,d1n,d2)
     integer, intent(in) :: n
