@@ -2,7 +2,7 @@
 ForUtils
 ===================
 :ForUtils: Various fortran 2003/2008 utility classes.
-:Version: 1.0
+:Version: 1.1
 :Author: Antony Lewis
 :Homepage: https://github.com/cmbant/forutils
 :Code documentation: https://cosmologist.info/forutils/
