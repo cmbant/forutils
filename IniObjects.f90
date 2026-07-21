@@ -121,8 +121,8 @@
 
     end subroutine TNameValueList_Clear
 
-    subroutine TNameValueList_Free(this)
-    Type(TNameValueList) :: this
+    impure elemental subroutine TNameValueList_Free(this)
+    Type(TNameValueList), intent(inout) :: this
     call this%Clear()
     end subroutine TNameValueList_Free
 

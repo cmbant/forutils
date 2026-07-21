@@ -157,8 +157,8 @@
 
     end subroutine Clear
 
-    subroutine finalize(this)
-    Type(TObjectList) :: this
+    impure elemental subroutine finalize(this)
+    Type(TObjectList), intent(inout) :: this
     call this%Clear()
     end subroutine finalize
 

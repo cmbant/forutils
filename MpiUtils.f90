@@ -136,9 +136,9 @@
 
 
     function TimerTime()
+    !$ use omp_lib, only: omp_get_wtime
     real(TTimer_dp) time
     real(TTimer_dp) :: TimerTime
-    !$ real(TTimer_dp), external :: omp_get_wtime
 #ifdef MPI
     TimerTime = MPI_WTime()
 #else

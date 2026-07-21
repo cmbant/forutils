@@ -8,7 +8,11 @@ MAKEOPT = --no-print-directory
 
 # For standalone compiling set the compiler
 ifneq ($(COMPILER),gfortran)
+ifneq ($(COMPILER),flang)
 ifortErr = $(shell which ifort >/dev/null 2>&1; echo $$?)
+else
+ifortErr = 1
+endif
 else
 ifortErr = 1
 endif
@@ -52,6 +56,13 @@ endif
 
 else
 
+gfortErr = $(shell which gfortran >/dev/null 2>&1; echo $$?)
+ifeq ($(COMPILER),flang)
+gfortErr = 1
+endif
+
+ifeq "$(gfortErr)" "0"
+
 major_version = $(shell gfortran -dumpversion 2>&1 | cut -d " " -f 3 | cut -d. -f 1)
 ifneq ($(shell test $(major_version) -gt 5; echo $$?),0)
 $(error gfortran version 6.3 or higher (or ifort 14+) is required)
@@ -64,6 +75,26 @@ F90DEBUGFLAGS ?= -g -O0 -fbacktrace
 F90RELEASEFLAGS ?= -O3 -ffast-math
 MODLINK=-J
 
+else
+
+#LLVM flang (experimental): used if explicitly requested with COMPILER=flang,
+#or as a last-resort fallback when neither ifort nor gfortran is found.
+FLANGCC := $(shell command -v flang-new 2>/dev/null || command -v flang 2>/dev/null || \
+	ls /usr/bin/flang-new-[0-9]* /usr/bin/flang-[0-9]* /usr/lib/llvm-*/bin/flang 2>/dev/null | sort -V | tail -n1)
+ifeq ($(FLANGCC),)
+$(error No supported Fortran compiler found (checked ifort, gfortran, flang). Install one, or set COMPILER/F90C)
+endif
+compiler_ver = flang-$(shell $(FLANGCC) --version 2>&1 | head -n1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)
+
+F90C ?= $(FLANGCC)
+# flang does not support -MMD/-M dependency generation, so incremental
+# rebuilds after editing a module fall back to full staleness via compiler.ver.
+F90COMMONFLAGS ?= -cpp -ffree-form -fopenmp -fPIC
+F90DEBUGFLAGS ?= -g -O0
+F90RELEASEFLAGS ?= -O3
+MODLINK=-module-dir
+
+endif
 endif
 
 

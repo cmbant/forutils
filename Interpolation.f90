@@ -928,7 +928,10 @@
     real(sp_acc), intent(in) :: x(n), y(n), d11, d1n
     real(sp_acc), intent(out) :: d2(n)
     integer i
-    real(sp_acc) xp,qn,sig,un,xxdiv,u(n-1),d1l,d1r
+    real(sp_acc) xp,qn,sig,un,xxdiv,d1l,d1r
+    real(sp_acc), allocatable :: u(:)
+
+    allocate(u(n-1))
 
     d1r= (y(2)-y(1))/(x(2)-x(1))
     if (d11==SPLINE_DANGLE) then
@@ -1078,7 +1081,9 @@
     real(sp_acc), intent(out) :: d2(n)
     integer i
     real(sp_acc) xp,qn,un,d1l,d1r,inv_delta,three_inv_delta
-    real(sp_acc) u(n-1)
+    real(sp_acc), allocatable :: u(:)
+
+    allocate(u(n-1))
 
     inv_delta = 1._sp_acc/delta
     three_inv_delta = 3._sp_acc*inv_delta

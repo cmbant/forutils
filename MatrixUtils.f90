@@ -423,12 +423,13 @@
     !Not optimized for large matrices
     integer, intent(in) :: n
     real(dm), intent(inout):: M(n,n)
-    real(dm) :: Tmp(n,n)
+    real(dm), allocatable :: Tmp(:,:)
     real(dm), intent(in) :: pow
 
-    real(dm) :: diag(n)
+    real(dm), allocatable :: diag(:)
     integer i
 
+    allocate(Tmp(n,n), diag(n))
     call Matrix_Diagonalize(M, diag, n)
     Tmp = M
     diag = diag**pow
@@ -619,10 +620,11 @@
     function MatrixSym_LogDet(mat) result (logDet)
     real(dm), intent(in) :: mat(:,:)
     real(dm) logDet
-    real(dm) Tmp(size(mat,dim=1),size(mat,dim=1))
+    real(dm), allocatable :: Tmp(:,:)
     integer i
 
     if (size(mat,dim=1) /= size(mat,dim=2)) call mpiStop('MatrixSym_LogDet: non-square matrix')
+    allocate(Tmp(size(mat,dim=1),size(mat,dim=1)))
     Tmp = mat
     call Matrix_Cholesky(tmp)
     logDet =0

@@ -279,8 +279,8 @@
     this%unit=0
     end subroutine TFileStream_Close
 
-    subroutine TFileStream_Free(this)
-    Type(TFileStream) :: this
+    impure elemental subroutine TFileStream_Free(this)
+    Type(TFileStream), intent(inout) :: this
 
     call this%Close()
     end subroutine TFileStream_Free
